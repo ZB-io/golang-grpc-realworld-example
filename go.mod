@@ -17,8 +17,8 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/rs/zerolog v1.18.0
 	github.com/stretchr/testify v1.5.1
-	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
-	golang.org/x/net v0.0.0-20191002035440-2ec189313ef0
+	golang.org/x/crypto v0.21.0
+	golang.org/x/net v0.23.0
 	google.golang.org/genproto v0.0.0-20200417142217-fb6d0575620b
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.21.0
@@ -29,8 +29,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/yaml.v2 v2.2.3 // indirect
 )
