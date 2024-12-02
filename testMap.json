@@ -1,0 +1,92 @@
+{
+  "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/handler/handler958_test.go": {
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/handler/handler_new_test.go": {
+      "testMethodHash": "e3e80cf028",
+      "roostMethodHash": "ROOST_METHOD_HASH=New_5541bf24ba\nROOST_METHOD_SIG_HASH=New_7d9b4d5982\n\n"
+    }
+  },
+  "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_test.go": {
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_create_test.go": {
+      "testMethodHash": "a12fce0d86",
+      "roostMethodHash": "ROOST_METHOD_HASH=Create_0a911e138d\nROOST_METHOD_SIG_HASH=Create_723c594377\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_createcomment_test.go": {
+      "testMethodHash": "46b551661a",
+      "roostMethodHash": "ROOST_METHOD_HASH=CreateComment_58d394e2c6\nROOST_METHOD_SIG_HASH=CreateComment_28b95f60a6\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_delete_test.go": {
+      "testMethodHash": "d1ba3ea3a5",
+      "roostMethodHash": "ROOST_METHOD_HASH=Delete_a8dc14c210\nROOST_METHOD_SIG_HASH=Delete_a4cc8044b1\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_deletecomment_test.go": {
+      "testMethodHash": "fd4b5cd2c5",
+      "roostMethodHash": "ROOST_METHOD_HASH=DeleteComment_b345e525a7\nROOST_METHOD_SIG_HASH=DeleteComment_732762ff12\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_getbyid_test.go": {
+      "testMethodHash": "1f419e2b14",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetByID_36e92ad6eb\nROOST_METHOD_SIG_HASH=GetByID_9616e43e52\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_getcommentbyid_test.go": {
+      "testMethodHash": "ced87ff464",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetCommentByID_4bc82104a6\nROOST_METHOD_SIG_HASH=GetCommentByID_333cab101b\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_getcomments_test.go": {
+      "testMethodHash": "cbf744dbd1",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetComments_e24a0f1b73\nROOST_METHOD_SIG_HASH=GetComments_fa6661983e\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_getfeedarticles_test.go": {
+      "testMethodHash": "27699f9c44",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetFeedArticles_9c4f57afe4\nROOST_METHOD_SIG_HASH=GetFeedArticles_cadca0e51b\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_gettags_test.go": {
+      "testMethodHash": "6fb86e308e",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetTags_ac049ebded\nROOST_METHOD_SIG_HASH=GetTags_25034b82b0\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_isfavorited_test.go": {
+      "testMethodHash": "f002f7d724",
+      "roostMethodHash": "ROOST_METHOD_HASH=IsFavorited_7ef7d3ed9e\nROOST_METHOD_SIG_HASH=IsFavorited_f34d52378f\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_newarticlestore_test.go": {
+      "testMethodHash": "b7d38eccb8",
+      "roostMethodHash": "ROOST_METHOD_HASH=NewArticleStore_6be2824012\nROOST_METHOD_SIG_HASH=NewArticleStore_3fe6f79a92\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_update_test.go": {
+      "testMethodHash": "09a6f73228",
+      "roostMethodHash": "ROOST_METHOD_HASH=Update_51145aa965\nROOST_METHOD_SIG_HASH=Update_6c1b5471fe\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_addfavorite_test.go": {
+      "testMethodHash": "7a1ab3efe2",
+      "roostMethodHash": "ROOST_METHOD_HASH=AddFavorite_2b0cb9d894\nROOST_METHOD_SIG_HASH=AddFavorite_c4dea0ee90\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_deletefavorite_test.go": {
+      "testMethodHash": "ee6d821c24",
+      "roostMethodHash": "ROOST_METHOD_HASH=DeleteFavorite_a856bcbb70\nROOST_METHOD_SIG_HASH=DeleteFavorite_f7e5c0626f\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/article_getarticles_test.go": {
+      "testMethodHash": "b47ba16f8a",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetArticles_6382a4fe7a\nROOST_METHOD_SIG_HASH=GetArticles_1a0b3b0e8b\n\n"
+    }
+  },
+  "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/user_test.go": {
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/user_create_test.go": {
+      "testMethodHash": "7a431de0a2",
+      "roostMethodHash": "ROOST_METHOD_HASH=Create_889fc0fc45\nROOST_METHOD_SIG_HASH=Create_4c48ec3920\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/user_follow_test.go": {
+      "testMethodHash": "ebbd0694b4",
+      "roostMethodHash": "ROOST_METHOD_HASH=Follow_48fdf1257b\nROOST_METHOD_SIG_HASH=Follow_8217e61c06\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/user_getbyemail_test.go": {
+      "testMethodHash": "8b3a716042",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetByEmail_3574af40e5\nROOST_METHOD_SIG_HASH=GetByEmail_5731b833c1\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/user_getbyid_test.go": {
+      "testMethodHash": "aa428b0827",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetByID_bbf946112e\nROOST_METHOD_SIG_HASH=GetByID_728dd55ed1\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/58ed40cc-365e-4b52-ab35-f326c7f72ac3/source/golang-grpc-realworld-example/store/user_getbyusername_test.go": {
+      "testMethodHash": "cb9483f93b",
+      "roostMethodHash": "ROOST_METHOD_HASH=GetByUsername_f11f114df2\nROOST_METHOD_SIG_HASH=GetByUsername_954d096e24\n\n"
+    }
+  }
+}
