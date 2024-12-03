@@ -1,0 +1,18 @@
+{
+  "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/1733197686/source/golang-grpc-realworld-example/handler/handler958_test.go": {
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/1733197686/source/golang-grpc-realworld-example/handler/handler_new_test.go": {
+      "testMethodHash": "e3e80cf028",
+      "roostMethodHash": "ROOST_METHOD_HASH=New_5541bf24ba\nROOST_METHOD_SIG_HASH=New_7d9b4d5982\n\n"
+    }
+  },
+  "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/1733197686/source/golang-grpc-realworld-example/store/article_test.go": {
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/1733197686/source/golang-grpc-realworld-example/store/article_create_test.go": {
+      "testMethodHash": "6e0682e1ba",
+      "roostMethodHash": "ROOST_METHOD_HASH=Create_0a911e138d\nROOST_METHOD_SIG_HASH=Create_723c594377\n\n"
+    },
+    "/var/tmp/Roost/RoostGPT/golang-grpc-realworld-example/1733197686/source/golang-grpc-realworld-example/store/article_createcomment_test.go": {
+      "testMethodHash": "c9fdc2f45d",
+      "roostMethodHash": "ROOST_METHOD_HASH=CreateComment_58d394e2c6\nROOST_METHOD_SIG_HASH=CreateComment_28b95f60a6\n\n"
+    }
+  }
+}
