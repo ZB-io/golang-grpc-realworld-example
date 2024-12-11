@@ -1,10 +1,10 @@
 package store
 
 import (
-	"bytes"
 	"fmt"
-	"io"
+	"os"
 	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
@@ -15,9 +15,8 @@ import (
 ROOST_METHOD_HASH=Create_0a911e138d
 ROOST_METHOD_SIG_HASH=Create_723c594377
 
-
- */
-func TestCreate(t *testing.T) {
+*/
+func TestArticleStoreCreate(t *testing.T) {
 
 	oldIn := os.Stdin
 	oldOut := os.Stdout
@@ -25,9 +24,8 @@ func TestCreate(t *testing.T) {
 		os.Stdin = oldIn
 		os.Stdout = oldOut
 	}()
-	var stdout, stdin bytes.Buffer
-	os.Stdin = io.Reader(&stdin)
-	os.Stdout = io.Writer(&stdout)
+	os.Stdin = os.NewFile(0, "stdin")
+	os.Stdout = os.NewFile(1, "stdout")
 
 	scenarios := []struct {
 		description string
@@ -80,7 +78,8 @@ func TestCreate(t *testing.T) {
 	}
 }
 
+/*
 func (s *UserStore) Create(m *model.User) error {
 	return s.db.Create(m).Error
 }
-
+*/

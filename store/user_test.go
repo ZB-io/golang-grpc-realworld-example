@@ -1,8 +1,11 @@
 package store
 
 import (
+	"database/sql"
 	"errors"
+	"net/http"
 	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
@@ -14,6 +17,7 @@ type MockSql struct {
 	Mock    sqlmock.Sqlmock
 	Request *http.Request
 }
+/*
 type UserStore struct {
 	db *gorm.DB
 }
@@ -48,17 +52,16 @@ type User struct {
 	FavoriteArticles	[]Article	`gorm:"many2many:favorite_articles;"`
 }
 
-/*
+
 ROOST_METHOD_HASH=Create_889fc0fc45
 ROOST_METHOD_SIG_HASH=Create_4c48ec3920
 
-
- */
 func (s *UserStore) Create(m *model.User) error {
 	return s.db.Create(m).Error
 }
+*/
 
-func TestCreate(t *testing.T) {
+func TestUserStoreCreate(t *testing.T) {
 	tests := []struct {
 		name    string
 		user    *model.User
