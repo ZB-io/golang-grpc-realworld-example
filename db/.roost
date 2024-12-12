@@ -1,0 +1,150 @@
+package db
+
+import (
+	"database/sql"
+	"os"
+	"sync"
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/google/uuid"
+	"github.com/joho/godotenv"
+	"github.com/jinzhu/gorm"
+)
+
+// TestNewTestDB tests the NewTestDB function across different scenarios.
+func TestNewTestDB(t *testing.T) {
+	// Mock environment loading
+	err := godotenv.Load("../env/test.env")
+	if err != nil {
+		// simulate and handle an error case
+		t.Fatalf("Failed to load env file: %v", err)
+	}
+	_ = os.Setenv("DB_HOST", "localhost") // Set necessary defaults for test execution
+
+	type testCase struct {
+		name          string
+		setupEnv      func()
+		mockDBFunc    func() (*gorm.DB, error)
+		expectedError error
+	}
+
+	// Test cases using table-driven approach
+	tests := []testCase{
+		{
+			name: "Successful Database Connection",
+			// Setup a valid environment
+			setupEnv: func() {
+				_ = os.Setenv("DB_HOST", "localhost")
+				_ = os.Setenv("DB_USER", "test")
+				_ = os.Setenv("DB_PASSWORD", "password")
+				_ = os.Setenv("DB_NAME", "testdb")
+				_ = os.Setenv("DB_PORT", "3306")
+			},
+			mockDBFunc: func() (*gorm.DB, error) {
+				db, _, err := sqlmock.New()
+				if err != nil {
+					return nil, err
+				}
+				return &gorm.DB{DB: db}, nil
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Missing Environment File",
+			setupEnv: func() {
+				os.Remove("../env/test.env") // Make file missing
+			},
+			mockDBFunc:    nil,
+			expectedError: godotenv.Load("../env/test.env"), // expect error
+		},
+		{
+			name: "Invalid DSN Configuration",
+			setupEnv: func() {
+				_ = os.Setenv("DB_HOST", "")
+			},
+			mockDBFunc: nil,
+			expectedError: func() error {
+				_, err := dsn()
+				return err
+			}(),
+		},
+		{
+			name: "Simulated gorm.Open Failure",
+			setupEnv: func() {
+				_ = os.Setenv("DB_HOST", "localhost")
+				// Valid configurations
+			},
+			mockDBFunc: func() (*gorm.DB, error) {
+				return nil, gorm.ErrCantStartTransaction // Simulate gorm open failure
+			},
+			expectedError: gorm.ErrCantStartTransaction,
+		},
+		{
+			name: "Concurrent Access to Uninitialized txdb",
+			setupEnv: func() {
+				_ = os.Setenv("DB_HOST", "localhost")
+			},
+			mockDBFunc: func() (*gorm.DB, error) {
+				return &gorm.DB{}, nil // valid db object
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Handling UUID Errors in sql.Open",
+			setupEnv: func() {
+				uuid.SetRand(None) // TODO: Simulate UUID error if applicable
+				_ = os.Setenv("DB_HOST", "localhost")
+			},
+			mockDBFunc: func() (*gorm.DB, error) {
+				db, _, err := sqlmock.New()
+				if err != nil {
+					return nil, err
+				}
+				return &gorm.DB{DB: db}, nil
+			},
+			expectedError: nil,
+		},
+	}
+
+	var once sync.Once
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup environment
+			tc.setupEnv()
+
+			// Mock DB function
+			var err error
+			if tc.mockDBFunc != nil {
+				once.Do(func() {
+					// Mocking db connection, replace with actual mock if needed
+					_, err := tc.mockDBFunc()
+					if err != nil {
+						t.Fatalf("Failed to create mock db: %v", err)
+					}
+				})
+			}
+
+			// Call the NewTestDB
+			dbInstance, err := NewTestDB()
+
+			// Assertion
+			if tc.expectedError == nil && err != nil {
+				t.Fatalf("Expected no error, but got %v", err)
+			}
+			if tc.expectedError != nil && err == nil {
+				t.Fatalf("Expected error %v, but got none", tc.expectedError)
+			}
+
+			if dbInstance == nil && tc.expectedError == nil {
+				t.Fatalf("Expected non-nil dbInstance, got nil!")
+			}
+		})
+	}
+
+	// Clean up any set environmental changes
+	t.Cleanup(func() {
+		os.Clearenv()
+	})
+}

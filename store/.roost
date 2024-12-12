@@ -1,0 +1,124 @@
+// Package store contains the UserStore struct and methods for user data interactions
+package store
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jinzhu/gorm"
+	"github.com/raahii/golang-grpc-realworld-example/model"
+)
+
+// TestUserStoreGetFollowingUserIDs tests the GetFollowingUserIDs function with multiple scenarios
+func TestUserStoreGetFollowingUserIDs(t *testing.T) {
+	// Define the test cases in a table-driven test structure
+	tests := []struct {
+		name       string
+		mockSetup  func(sqlmock.Sqlmock)
+		inputUser  *model.User
+		wantIDs    []uint
+		expectErr  bool
+	}{
+		{
+			name: "Normal Operation with Multiple Followings",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"to_user_id"}).AddRow(2).AddRow(3).AddRow(4)
+				mock.ExpectQuery("SELECT to_user_id FROM follows WHERE from_user_id = ?").
+					WithArgs(1).WillReturnRows(rows)
+			},
+			inputUser: &model.User{Model: gorm.Model{ID: 1}}, // Mock user ID 1
+			wantIDs:   []uint{2, 3, 4},
+			expectErr: false,
+		},
+		{
+			name: "No Followings for User",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT to_user_id FROM follows WHERE from_user_id = ?").
+					WithArgs(2).WillReturnRows(sqlmock.NewRows([]string{"to_user_id"}))
+			},
+			inputUser: &model.User{Model: gorm.Model{ID: 2}}, // Mock user ID 2
+			wantIDs:   []uint{},
+			expectErr: false,
+		},
+		{
+			name: "Database Error Encounter",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT to_user_id FROM follows WHERE from_user_id = ?").
+					WithArgs(3).WillReturnError(errors.New("database error"))
+			},
+			inputUser: &model.User{Model: gorm.Model{ID: 3}}, // Arbitrary user ID 3
+			wantIDs:   []uint{},
+			expectErr: true,
+		},
+		{
+			name: "Database Connection Lost",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT to_user_id FROM follows WHERE from_user_id = ?").
+					WithArgs(4).WillReturnError(gorm.ErrInvalidTransaction)
+			},
+			inputUser: &model.User{Model: gorm.Model{ID: 4}}, // Arbitrary user ID 4
+			wantIDs:   []uint{},
+			expectErr: true,
+		},
+		{
+			name: "Single Following User ID",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"to_user_id"}).AddRow(5)
+				mock.ExpectQuery("SELECT to_user_id FROM follows WHERE from_user_id = ?").
+					WithArgs(5).WillReturnRows(rows)
+			},
+			inputUser: &model.User{Model: gorm.Model{ID: 5}}, // Mock user ID 5
+			wantIDs:   []uint{5},
+			expectErr: false,
+		},
+		{
+			name: "Maximum Integer for User ID",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"to_user_id"}).AddRow(6).AddRow(7)
+				mock.ExpectQuery("SELECT to_user_id FROM follows WHERE from_user_id = ?").
+					WithArgs(^uint(0)).WillReturnRows(rows)
+			},
+			inputUser: &model.User{Model: gorm.Model{ID: ^uint(0)}}, // Max integer value for user ID
+			wantIDs:   []uint{6, 7},
+			expectErr: false,
+		},
+	}
+
+	// Iterate over each test case
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			if err != nil {
+				t.Fatalf("Unable to create mock sql database: %v", err)
+			}
+			defer db.Close()
+
+			tt.mockSetup(mock) // Setup mock expectations
+
+			gormDB, _ := gorm.Open("mysql", db) // TODO: Update to suit the actual database driver
+			store := &UserStore{db: gormDB}
+
+			gotIDs, err := store.GetFollowingUserIDs(tt.inputUser)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("GetFollowingUserIDs() error = %v, expectErr %v", err, tt.expectErr)
+			}
+			if !equalSlices(gotIDs, tt.wantIDs) {
+				t.Errorf("GetFollowingUserIDs() = %v, want %v", gotIDs, tt.wantIDs)
+			}
+		})
+	}
+}
+
+// Helper function to compare two slices for equality
+func equalSlices(a, b []uint) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
