@@ -1,125 +1,31 @@
 package store
 
 import (
+	"bytes"
+	"database/sql"
 	"errors"
-	"testing"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jinzhu/gorm"
-	"github.com/raahii/golang-grpc-realworld-example/model"
 	"fmt"
+	"log"
+	"os"
+	"sync"
+	"testing"
+
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/raahii/golang-grpc-realworld-example/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	gormV2 "gorm.io/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/stretchr/testify/require"
-	_ "github.com/mattn/go-sqlite3"
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	_ "github.com/lib/pq"
-	"sync"
-	"log"
-	"bytes"
-	"os"
-	"database/sql"
 )
-
-type ArticleStore struct {
-	db *gorm.DB
-}
-type DB struct {
-	sync.RWMutex
-	Value			interface{}
-	Error			error
-	RowsAffected		int64
-	db			SQLCommon
-	blockGlobalUpdate	bool
-	logMode			logModeValue
-	logger			logger
-	search			*search
-	values			sync.Map
-	parent			*DB
-	callbacks		*Callback
-	dialect			Dialect
-	singularTable		bool
-	nowFuncOverride		func() time.Time
-}// single db
-// function to be used to override the creating of a new timestamp
-
-
-type ArticleStore struct {
-	db *gorm.DB
-}
-type DB struct {
-	sync.RWMutex
-	Value			interface{}
-	Error			error
-	RowsAffected		int64
-	db			SQLCommon
-	blockGlobalUpdate	bool
-	logMode			logModeValue
-	logger			logger
-	search			*search
-	values			sync.Map
-	parent			*DB
-	callbacks		*Callback
-	dialect			Dialect
-	singularTable		bool
-	nowFuncOverride		func() time.Time
-}// single db
-// function to be used to override the creating of a new timestamp
-
-
-type ArticleStore struct {
-	db *gorm.DB
-}
-type DB struct {
-	sync.RWMutex
-	Value			interface{}
-	Error			error
-	RowsAffected		int64
-	db			SQLCommon
-	blockGlobalUpdate	bool
-	logMode			logModeValue
-	logger			logger
-	search			*search
-	values			sync.Map
-	parent			*DB
-	callbacks		*Callback
-	dialect			Dialect
-	singularTable		bool
-	nowFuncOverride		func() time.Time
-}// single db
-// function to be used to override the creating of a new timestamp
-
-
-type ArticleStore struct {
-	db *gorm.DB
-}
-type DB struct {
-	sync.RWMutex
-	Value			interface{}
-	Error			error
-	RowsAffected		int64
-	db			SQLCommon
-	blockGlobalUpdate	bool
-	logMode			logModeValue
-	logger			logger
-	search			*search
-	values			sync.Map
-	parent			*DB
-	callbacks		*Callback
-	dialect			Dialect
-	singularTable		bool
-	nowFuncOverride		func() time.Time
-}// single db
-// function to be used to override the creating of a new timestamp
-
 
 /*
 ROOST_METHOD_HASH=Create_0a911e138d
 ROOST_METHOD_SIG_HASH=Create_723c594377
-
-
- */
+*/
 func TestCreate(t *testing.T) {
 	type testCase struct {
 		name        string
@@ -252,10 +158,6 @@ ROOST_METHOD_SIG_HASH=CreateComment_28b95f60a6
 
 
  */
-func (s *ArticleStore) CreateComment(m *model.Comment) error {
-	return s.db.Create(&m).Error
-}
-
 func TestCreateComment(t *testing.T) {
 
 	db, mock, err := sqlmock.New()
@@ -377,9 +279,7 @@ func TestCreateComment(t *testing.T) {
 	}
 }
 
-func (s *ArticleStore) CreateComment(m *model.Comment) error {
-	return s.db.Create(&m).Error
-}
+
 
 /*
 ROOST_METHOD_HASH=Delete_a8dc14c210
@@ -818,16 +718,6 @@ ROOST_METHOD_SIG_HASH=GetComments_fa6661983e
 
 
  */
-func (s *ArticleStore) GetComments(m *model.Article) ([]model.Comment, error) {
-	var cs []model.Comment
-	err := s.db.Preload("Author").
-		Where("article_id = ?", m.ID).
-		Find(&cs).Error
-	if err != nil {
-		return cs, err
-	}
-	return cs, nil
-}
 
 func TestGetComments(t *testing.T) {
 	t.Run("Scenario 1: Retrieve Comments for an Article with Multiple Comments", func(t *testing.T) {
@@ -1319,11 +1209,6 @@ ROOST_METHOD_SIG_HASH=NewArticleStore_3fe6f79a92
 
 
  */
-func NewArticleStore(db *gorm.DB) *ArticleStore {
-	return &ArticleStore{
-		db: db,
-	}
-}
 
 func TestNewArticleStore(t *testing.T) {
 	t.Run("Successful Initialization with a Non-nil DB", func(t *testing.T) {
@@ -1575,17 +1460,6 @@ ROOST_METHOD_SIG_HASH=GetFeedArticles_cadca0e51b
 
 
  */
-func (s *ArticleStore) GetFeedArticles(userIDs []uint, limit, offset int64) ([]model.Article, error) {
-	d := s.db.Preload("Author").
-		Where("user_id in (?)", userIDs)
-
-	d = d.Offset(offset).Limit(limit)
-
-	var as []model.Article
-	err := d.Find(&as).Error
-
-	return as, err
-}
 
 func TestGetFeedArticles(t *testing.T) {
 
@@ -1719,17 +1593,6 @@ func TestGetFeedArticles(t *testing.T) {
 
 }
 
-func (s *ArticleStore) GetFeedArticles(userIDs []uint, limit, offset int64) ([]model.Article, error) {
-	d := s.db.Preload("Author").
-		Where("user_id in (?)", userIDs)
-
-	d = d.Offset(offset).Limit(limit)
-
-	var as []model.Article
-	err := d.Find(&as).Error
-
-	return as, err
-}
 
 /*
 ROOST_METHOD_HASH=AddFavorite_2b0cb9d894

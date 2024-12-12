@@ -1,68 +1,66 @@
 package store
 
 import (
-	"testing"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jinzhu/gorm"
-	"github.com/raahii/golang-grpc-realworld-example/model"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"fmt"
-	"regexp"
-	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/stretchr/testify/assert"
 	"errors"
+	"fmt"
 	"log"
+	"regexp"
+	"testing"
+
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/raahii/golang-grpc-realworld-example/model"
+	"github.com/stretchr/testify/assert"
 )
 
-type UserStore struct {
-	db *gorm.DB
-}
-type DB struct {
-	sync.RWMutex
-	Value			interface{}
-	Error			error
-	RowsAffected		int64
-	db			SQLCommon
-	blockGlobalUpdate	bool
-	logMode			logModeValue
-	logger			logger
-	search			*search
-	values			sync.Map
-	parent			*DB
-	callbacks		*Callback
-	dialect			Dialect
-	singularTable		bool
-	nowFuncOverride		func() time.Time
-}// single db
+// type UserStore struct {
+// 	db *gorm.DB
+// }
+// type DB struct {
+// 	sync.RWMutex
+// 	Value			interface{}
+// 	Error			error
+// 	RowsAffected		int64
+// 	db			SQLCommon
+// 	blockGlobalUpdate	bool
+// 	logMode			logModeValue
+// 	logger			logger
+// 	search			*search
+// 	values			sync.Map
+// 	parent			*DB
+// 	callbacks		*Callback
+// 	dialect			Dialect
+// 	singularTable		bool
+// 	nowFuncOverride		func() time.Time
+// }// single db
+// // function to be used to override the creating of a new timestamp
+
+// type DB struct {
+// 	sync.RWMutex
+// 	Value			interface{}
+// 	Error			error
+// 	RowsAffected		int64
+// 	db			SQLCommon
+// 	blockGlobalUpdate	bool
+// 	logMode			logModeValue
+// 	logger			logger
+// 	search			*search
+// 	values			sync.Map
+// 	parent			*DB
+// 	callbacks		*Callback
+// 	dialect			Dialect
+// 	singularTable		bool
+// 	nowFuncOverride		func() time.Time
+// }// single db
 // function to be used to override the creating of a new timestamp
-
-
-type DB struct {
-	sync.RWMutex
-	Value			interface{}
-	Error			error
-	RowsAffected		int64
-	db			SQLCommon
-	blockGlobalUpdate	bool
-	logMode			logModeValue
-	logger			logger
-	search			*search
-	values			sync.Map
-	parent			*DB
-	callbacks		*Callback
-	dialect			Dialect
-	singularTable		bool
-	nowFuncOverride		func() time.Time
-}// single db
-// function to be used to override the creating of a new timestamp
-
 
 /*
 ROOST_METHOD_HASH=Create_889fc0fc45
 ROOST_METHOD_SIG_HASH=Create_4c48ec3920
 
 
- */
+*/
 func TestUserStoreCreate(t *testing.T) {
 
 	type testCase struct {
@@ -72,6 +70,7 @@ func TestUserStoreCreate(t *testing.T) {
 		wantErr bool
 	}
 
+	
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open sqlmock database: %s", err)
@@ -83,7 +82,7 @@ func TestUserStoreCreate(t *testing.T) {
 		t.Fatalf("failed to open gorm DB: %s", err)
 	}
 
-	store := &UserStore{db: gormDB}
+	store := NewUserStore(gormDB)
 
 	tests := []testCase{
 		{
@@ -471,20 +470,20 @@ ROOST_METHOD_SIG_HASH=GetByUsername_954d096e24
 
 
  */
-func (s *UserStore) GetByUsername(username string) (*model.User, error) {
-	var m model.User
-	if err := s.db.Where("username = ?", username).First(&m).Error; err != nil {
-		return nil, err
-	}
-	return &m, nil
-}
+// func (s *UserStore) GetByUsername(username string) (*model.User, error) {
+// 	var m model.User
+// 	if err := s.db.Where("username = ?", username).First(&m).Error; err != nil {
+// 		return nil, err
+// 	}
+// 	return &m, nil
+// }
 
 func TestUserStoreGetByUsername(t *testing.T) {
-	var db *gorm.DB
-	var mock sqlmock.Sqlmock
+	// var db *gorm.DB
+	// var mock sqlmock.Sqlmock
 	var err error
 
-	db, mock, err = sqlmock.New()
+	db, mock, err := sqlmock.New()
 	assert.NoError(t, err, "Mock database connection should be established")
 
 	defer func() {
@@ -492,7 +491,11 @@ func TestUserStoreGetByUsername(t *testing.T) {
 		db.Close()
 	}()
 
-	userStore := &UserStore{db: db}
+	gormDB, err := gorm.Open("mysql", db)
+	if err != nil {
+		t.Fatalf("failed to open gorm DB: %s", err)
+	}
+	userStore := NewUserStore(gormDB)
 
 	tests := []struct {
 		name     string
@@ -703,11 +706,11 @@ ROOST_METHOD_SIG_HASH=NewUserStore_4f0c2dfca9
 
 
  */
-func NewUserStore(db *gorm.DB) *UserStore {
-	return &UserStore{
-		db: db,
-	}
-}
+// func NewUserStore(db *gorm.DB) *UserStore {
+// 	return &UserStore{
+// 		db: db,
+// 	}
+// }
 
 func TestNewUserStore(t *testing.T) {
 	t.Run("Scenario 1: Successful Initialization of UserStore with a Valid DB Instance", func(t *testing.T) {
@@ -795,7 +798,7 @@ func TestNewUserStore(t *testing.T) {
 		}
 		defer gormDB.Close()
 
-		userStore := NewUserStore(gormDB)
+		// userStore := NewUserStore(gormDB)
 
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unmet expectations: %s", err)

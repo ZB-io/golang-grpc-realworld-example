@@ -1,39 +1,22 @@
 package model
 
 import (
+	"errors"
+	"strings"
 	"testing"
+
+	validation "github.com/go-ozzo/ozzo-validation"
 	pb "github.com/raahii/golang-grpc-realworld-example/proto"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	"errors"
-	"strings"
-	"regexp"
-	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/jinzhu/gorm"
 )
-
-type User struct {
-	gorm.Model
-	Username string `gorm:"unique_index;not null"`
-	Email    string `gorm:"unique_index;not null"`
-	Password string `gorm:"not null"`
-	Bio      string `gorm:"not null"`
-	Image    string `gorm:"not null"`
-}
-type Model struct {
-	ID		uint	`gorm:"primary_key"`
-	CreatedAt	time.Time
-	UpdatedAt	time.Time
-	DeletedAt	*time.Time	`sql:"index"`
-}
 
 /*
 ROOST_METHOD_HASH=ProtoProfile_c70e154ff1
 ROOST_METHOD_SIG_HASH=ProtoProfile_def254b98c
 
 
- */
+*/
 func TestUserProtoProfile(t *testing.T) {
 	type testCase struct {
 		user        User
@@ -518,22 +501,22 @@ func TestUserValidate(t *testing.T) {
 	}
 }
 
-func (u User) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(
-			&u.Username,
-			validation.Required,
-			validation.Match(regexp.MustCompile("^[a-zA-Z0-9]+$")),
-		),
-		validation.Field(
-			&u.Email,
-			validation.Required,
-			is.Email,
-		),
-		validation.Field(
-			&u.Password,
-			validation.Required,
-		),
-	)
-}
+// func (u User) Validate() error {
+// 	return validation.ValidateStruct(&u,
+// 		validation.Field(
+// 			&u.Username,
+// 			validation.Required,
+// 			validation.Match(regexp.MustCompile("^[a-zA-Z0-9]+$")),
+// 		),
+// 		validation.Field(
+// 			&u.Email,
+// 			validation.Required,
+// 			is.Email,
+// 		),
+// 		validation.Field(
+// 			&u.Password,
+// 			validation.Required,
+// 		),
+// 	)
+// }
 
