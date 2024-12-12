@@ -18,7 +18,8 @@ import (
 	"github.com/raahii/golang-grpc-realworld-example/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/postgres"
+
+	// "gorm.io/driver/postgres"
 	gormV2 "gorm.io/gorm"
 )
 
@@ -1292,7 +1293,7 @@ func TestNewArticleStore(t *testing.T) {
 		}
 		defer gormDB.Close()
 
-		articleStore := NewArticleStore(gormDB)
+		// articleStore := NewArticleStore(gormDB)
 
 		mock.ExpectClose()
 

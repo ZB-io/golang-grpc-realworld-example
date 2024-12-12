@@ -363,12 +363,12 @@ func TestUserHashPassword(t *testing.T) {
 				Password: test.password,
 			}
 
-			originalFunc := bcrypt.GenerateFromPassword
-			if test.mockGenerateFn != nil {
-				bcrypt.GenerateFromPassword = test.mockGenerateFn
-			}
+			// originalFunc := bcrypt.GenerateFromPassword
+			// if test.mockGenerateFn != nil {
+			// 	bcrypt.GenerateFromPassword = test.mockGenerateFn
+			// }
 
-			defer func() { bcrypt.GenerateFromPassword = originalFunc }()
+			// defer func() { bcrypt.GenerateFromPassword = originalFunc }()
 
 			err := user.HashPassword()
 

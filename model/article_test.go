@@ -1,24 +1,27 @@
 package model
 
 import (
-	"testing"
 	"errors"
 	"strings"
+	"testing"
+
 	validation "github.com/go-ozzo/ozzo-validation"
-	"fmt"
-	"time"
+
+	// "fmt"
 	"math"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	pb "github.com/raahii/golang-grpc-realworld-example/proto"
 )
 
-const ISO8601 = "2006-01-02T15:04:05-0700Z"
+// const ISO8601 = "2006-01-02T15:04:05-0700Z"
 /*
 ROOST_METHOD_HASH=Overwrite_3d4db6693d
 ROOST_METHOD_SIG_HASH=Overwrite_22e8730976
 
 
- */
+*/
 func TestArticleOverwrite(t *testing.T) {
 	type args struct {
 		title       string
