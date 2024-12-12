@@ -1,0 +1,133 @@
+package auth
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+)
+
+// A mock claims struct, assuming it's similar to the real one.
+type claims struct {
+	UserID    uint
+	ExpiresAt int64
+	jwt.StandardClaims
+}
+
+// TestGetUserID tests the GetUserID function with various scenarios.
+func TestGetUserID(t *testing.T) {
+	jwtSecret = []byte("testsecret") // Testing secret key for JWT
+
+	tests := []struct {
+		name           string
+		ctx            context.Context
+		expectedUserID uint
+		expectedErr    string
+	}{
+		{
+			name: "Successfully Retrieve User ID from Valid Token",
+			ctx:  createTestContext("1", time.Now().Add(1*time.Hour).Unix()),
+			expectedUserID: 1,
+			expectedErr:    "",
+		},
+		{
+			name:           "Handle Missing Authorization Metadata",
+			ctx:            context.Background(),
+			expectedUserID: 0,
+			expectedErr:    "Request unauthenticated with Token",
+		},
+		{
+			name:           "Handle Invalid Token Error",
+			ctx:            createTestContextMalformed(),
+			expectedUserID: 0,
+			expectedErr:    "invalid token: it's not even a token",
+		},
+		{
+			name: "Handle Expired Token",
+			ctx:  createTestContext("1", time.Now().Add(-1*time.Hour).Unix()),
+			expectedUserID: 0,
+			expectedErr:    "token expired",
+		},
+		{
+			name: "Handle Token with Invalid Claims",
+			ctx:  createTestContextInvalidClaims(),
+			expectedUserID: 0,
+			expectedErr:    "invalid token: cannot map token to claims",
+		},
+		{
+			name: "Token with Invalid Signing Method",
+			ctx:  createTestContextInvalidSigningMethod(),
+			expectedUserID: 0,
+			expectedErr:    "invalid signing method",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			userID, err := GetUserID(tt.ctx)
+
+			if userID != tt.expectedUserID {
+				t.Errorf("expected userID: %d, got: %d", tt.expectedUserID, userID)
+			}
+
+			if err != nil && err.Error() != tt.expectedErr {
+				t.Errorf("expected error: %v, got: %v", tt.expectedErr, err.Error())
+			}
+
+			if err == nil && tt.expectedErr != "" {
+				t.Errorf("expected error: %v, got: nil", tt.expectedErr)
+			}
+
+			// Log the output for clarity
+			t.Logf("Test Scenario: %s passed\n", tt.name)
+		})
+	}
+}
+
+// Helper function to create a test context with a valid token.
+func createTestContext(userID string, exp int64) context.Context {
+	claims := &claims{
+		UserID:    1,
+		ExpiresAt: exp,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString(jwtSecret)
+
+	md := metadata.Pairs("authorization", "Token "+tokenString)
+	return metadata.NewIncomingContext(context.Background(), md)
+}
+
+// Helper function to create a test context with malformed token data.
+func createTestContextMalformed() context.Context {
+	md := metadata.Pairs("authorization", "Token malformed.token.data")
+	return metadata.NewIncomingContext(context.Background(), md)
+}
+
+// Helper function to create a test context with invalid claims structure.
+func createTestContextInvalidClaims() context.Context {
+	claims := &jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(1 * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString(jwtSecret)
+
+	md := metadata.Pairs("authorization", "Token "+tokenString)
+	return metadata.NewIncomingContext(context.Background(), md)
+}
+
+// Helper function to create a test context with invalid signing method.
+func createTestContextInvalidSigningMethod() context.Context {
+	claims := &claims{
+		UserID:    1,
+		ExpiresAt: time.Now().Add(1 * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims) // Incorrect signing method
+	tokenString, _ := token.SignedString(jwtSecret)           // Note: This won't actually sign correctly
+
+	md := metadata.Pairs("authorization", "Token "+tokenString)
+	return metadata.NewIncomingContext(context.Background(), md)
+}

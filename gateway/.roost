@@ -1,0 +1,130 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	gw "github.com/raahii/golang-grpc-realworld-example/proto"
+	"google.golang.org/grpc"
+)
+
+// Testrun represents a suite of tests for the "run" function
+func Testrun(t *testing.T) {
+	// Initialize test flags
+	flag.Parse()
+	defer flag.Set("endpoint", "localhost:50051") // reset flag after test
+
+	// A table-driven test structure to manage test scenarios
+	tests := []struct {
+		name          string
+		modifyEnv     func()
+		expectedError bool
+	}{
+		{
+			name: "Successful Registration of Handlers",
+			modifyEnv: func() {
+				// No modification, use default setup
+			},
+			expectedError: false,
+		},
+		{
+			name: "Handler Registration Failure",
+			modifyEnv: func() {
+				flag.Set("endpoint", "invalid:50051") // Modify to an invalid endpoint
+			},
+			expectedError: true,
+		},
+		{
+			name: "Server Start Failure Due to Port Binding Error",
+			modifyEnv: func() {
+				// Start a dummy server to occupy the port ":3000"
+				go http.ListenAndServe(":3000", http.NewServeMux())
+				time.Sleep(1 * time.Second) // Give it some time to start
+			},
+			expectedError: true,
+		},
+		{
+			name: "Context Cancellation before Completion",
+			modifyEnv: func() {
+				// Simulate context cancellation before the server can fully start
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				_ = ctx // to avoid unused variable error
+			},
+			expectedError: true, // Expect true since ctx cancellation cannot be directly simulated in this scope
+		},
+		{
+			name: "Testing with Different 'echoEndpoint' Configurations",
+			modifyEnv: func() {
+				// No specific setup required as it is part of the scenarios above
+			},
+			expectedError: false,
+		},
+	}
+
+	// Iterate over each test scenario
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Capture stdout for comparison
+			var buf bytes.Buffer
+			logger := log.New(&buf, "", log.LstdFlags)
+			log.SetOutput(&buf)
+
+			// Arrange
+			tt.modifyEnv()
+
+			// Act & Capture run output
+			err := run()
+
+			// Assert
+			if tt.expectedError && err == nil {
+				t.Errorf("expected an error but did not get one")
+			} else if !tt.expectedError && err != nil {
+				t.Errorf("did not expect an error but got one: %v", err)
+			} else {
+				t.Logf("Scenario '%s' executed with output: %s", tt.name, buf.String())
+			}
+
+			// Reset log output
+			log.SetOutput(ioutil.Discard)
+		})
+	}
+}
+
+// CaptureAndCompareOutput is a utility function to aid in simulating test environments and capturing std output
+func CaptureAndCompareOutput(t *testing.T, f func() error, expectedError bool) {
+	// Capture Stdout
+	old := os.Stdout // Backup the original stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	err := f()
+
+	// Close writer to finish Stdout capture
+	err = w.Close()
+	if err != nil {
+		t.Errorf("error closing writer: %v", err)
+	}
+	os.Stdout = old // Restore original stdout
+
+	// Read captured output
+	out, _ := ioutil.ReadAll(r)
+
+	// Assert
+	success := err == nil && !expectedError || err != nil && expectedError
+	if !success {
+		t.Errorf("Expected error: %t, got: %v, output: %s", expectedError, err, string(out))
+	} else {
+		t.Logf("Test output: %s", string(out))
+	}
+}

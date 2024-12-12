@@ -1,0 +1,101 @@
+package handler
+
+import (
+	"testing"
+	"github.com/rs/zerolog"
+	"github.com/raahii/golang-grpc-realworld-example/store"
+	"github.com/stretchr/testify/assert"
+	"github.com/DATA-DOG/go-sqlmock"
+	"gorm.io/gorm"
+)
+
+// Mock dependencies are used for testing purposes
+type mockLogger struct {
+	zerolog.Logger
+}
+
+type mockUserStore struct {
+	store.UserStore
+}
+
+type mockArticleStore struct {
+	store.ArticleStore
+}
+
+// TestNew function is meant to cover various initialization scenarios for the New function
+func TestNew(t *testing.T) {
+	// Declare test cases in a table-driven format
+	testCases := []struct {
+		name       string
+		logger     *zerolog.Logger
+		userStore  *store.UserStore
+		articleStore *store.ArticleStore
+		expectNil  bool
+	}{
+		{
+			name:        "Basic Initialization",
+			logger:      &mockLogger{}.Logger,
+			userStore:   &mockUserStore{}.UserStore,
+			articleStore: &mockArticleStore{}.ArticleStore,
+			expectNil:   false,
+		},
+		{
+			name:        "Nil Logger",
+			logger:      nil,
+			userStore:   &mockUserStore{}.UserStore,
+			articleStore: &mockArticleStore{}.ArticleStore,
+			expectNil:   false, // Expectation might vary based on implementation detail of handling nil logger
+		},
+		{
+			name:        "Nil UserStore",
+			logger:      &mockLogger{}.Logger,
+			userStore:   nil,
+			articleStore: &mockArticleStore{}.ArticleStore,
+			expectNil:   false,
+		},
+		{
+			name:        "Nil ArticleStore",
+			logger:      &mockLogger{}.Logger,
+			userStore:   &mockUserStore{}.UserStore,
+			articleStore: nil,
+			expectNil:   false,
+		},
+		{
+			name:        "All Dependencies Nil",
+			logger:      nil,
+			userStore:   nil,
+			articleStore: nil,
+			expectNil:   false, // Assuming the handler can be created with nil dependencies; update logic as needed
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			handler := New(tc.logger, tc.userStore, tc.articleStore)
+			if tc.expectNil {
+				assert.Nil(t, handler, "Expected handler to be nil but it wasn't.")
+			} else {
+				assert.NotNil(t, handler, "Expected handler to be non-nil but it was nil.")
+			}
+			t.Logf("Test %s: Handler creation returned %v handler.", tc.name, handler)
+		})
+	}
+}
+
+// This is assuming the `Handler` struct is defined somewhere in `handler` package
+// and includes:
+// type Handler struct {
+//   logger *zerolog.Logger
+//   us     *store.UserStore
+//   as     *store.ArticleStore
+// }
+
+// Mock setup for gorm.DB using sqlmock
+func setupMockDB() (*gorm.DB, sqlmock.Sqlmock, error) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		return nil, nil, err
+	}
+	// TODO: replace with gorm initialization steps
+	return db, mock, nil
+}

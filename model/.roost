@@ -1,0 +1,111 @@
+package model
+
+import (
+	"errors"
+	"testing"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+)
+
+// TestUserValidate tests the User Validate method using table-driven tests.
+func TestUserValidate(t *testing.T) {
+	tests := []struct {
+		name     string
+		user     User
+		wantErrs map[string]string
+	}{
+		{
+			name: "Valid user information should pass validation",
+			user: User{
+				Username: "validUser123",
+				Email:    "valid.email@example.com",
+				Password: "strongpassword",
+			},
+			wantErrs: nil,
+		},
+		{
+			name: "Missing username should fail validation",
+			user: User{
+				Username: "",
+				Email:    "user@example.com",
+				Password: "password",
+			},
+			wantErrs: map[string]string{"Username": "cannot be blank"},
+		},
+		{
+			name: "Invalid username format should fail validation",
+			user: User{
+				Username: "invalid_user!@#",
+				Email:    "user@example.com",
+				Password: "password",
+			},
+			wantErrs: map[string]string{"Username": "must be in a valid format"},
+		},
+		{
+			name: "Missing email should fail validation",
+			user: User{
+				Username: "user123",
+				Email:    "",
+				Password: "password",
+			},
+			wantErrs: map[string]string{"Email": "cannot be blank"},
+		},
+		{
+			name: "Invalid email format should fail validation",
+			user: User{
+				Username: "user123",
+				Email:    "user.com",
+				Password: "password",
+			},
+			wantErrs: map[string]string{"Email": "must be a valid email address"},
+		},
+		{
+			name: "Missing password should fail validation",
+			user: User{
+				Username: "user123",
+				Email:    "user@example.com",
+				Password: "",
+			},
+			wantErrs: map[string]string{"Password": "cannot be blank"},
+		},
+		{
+			name: "All fields missing should fail validation",
+			user: User{
+				Username: "",
+				Email:    "",
+				Password: "",
+			},
+			wantErrs: map[string]string{
+				"Username": "cannot be blank",
+				"Email":    "cannot be blank",
+				"Password": "cannot be blank",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.user.Validate()
+
+			if len(tt.wantErrs) == 0 && err != nil {
+				t.Errorf("expected no errors, got %v", err)
+			} else if len(tt.wantErrs) > 0 {
+				if err == nil {
+					t.Errorf("expected errors but got none")
+				} else {
+					errs, ok := err.(validation.Errors)
+					if !ok {
+						t.Errorf("expected validation errors, got %v", err)
+					} else {
+						for field, wantErr := range tt.wantErrs {
+							if errMsg, exists := errs[field]; !exists || errMsg.Error() != wantErr {
+								t.Errorf("expected error %s for field %s, got %v", wantErr, field, errMsg)
+							}
+						}
+					}
+				}
+			}
+			t.Logf("Test %s executed", tt.name) // Log test execution
+		})
+	}
+}
