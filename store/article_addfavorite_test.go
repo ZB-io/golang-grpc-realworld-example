@@ -3,6 +3,8 @@
 /*
 
 roost_feedback [12/24/2024, 10:13:56 AM]:Fix these errors \n```\n./article_addfavorite_test.go:59:6: ArticleStore redeclared in this block\n\t./article.go:9:6: other declaration of ArticleStore\n./article_addfavorite_test.go:63:24: method ArticleStore.AddFavorite already declared at ./article.go:124:24\n./article_addfavorite_test.go:146:22: cannot use &MockAssociation{…} (value of type *MockAssociation) as *gorm.Association value in struct literal\n./article_addfavorite_test.go:150:37: cannot use db (variable of type *MockDB) as *gorm.DB value in struct literal\n```
+
+roost_feedback [12/24/2024, 10:35:29 AM]:ERROR:\n```\n./article_addfavorite_test.go:157:22: cannot use &TestAssociation{…} (value of type *TestAssociation) as *gorm.Association value in struct literal\n```\nFix the above error
 */
 
 // ********RoostGPT********
@@ -16,56 +18,54 @@ import (
 	"testing"
 )
 
-// Mock DB to capture the transaction calls
-type TestDB struct {
+type MockDB struct {
 	mockModel        *model.Article
-	mockAssociation  *gorm.Association
+	mockAssociation  *MockAssociation
 	mockUser         *model.User
 	rollbackTriggered bool
 	commitTriggered  bool
 }
 
-func (m *TestDB) Model(value interface{}) *gorm.DB {
+func (m *MockDB) Model(value interface{}) *MockDB {
 	m.mockModel = value.(*model.Article)
-	return &gorm.DB{}
+	return m
 }
 
-func (m *TestDB) Update(column string, value ...interface{}) *gorm.DB {
+func (m *MockDB) Update(column string, value ...interface{}) *MockDB {
 	if column == "favorites_count" && m.mockModel != nil {
 		m.mockModel.FavoritesCount++
 	}
-	return &gorm.DB{}
+	return m
 }
 
-func (m *TestDB) Begin() *gorm.DB {
-	return &gorm.DB{}
+func (m *MockDB) Begin() *MockDB {
+	return m
 }
 
-func (m *TestDB) Rollback() *gorm.DB {
+func (m *MockDB) Rollback() *MockDB {
 	m.rollbackTriggered = true
-	return &gorm.DB{}
+	return m
 }
 
-func (m *TestDB) Commit() *gorm.DB {
+func (m *MockDB) Commit() *MockDB {
 	m.commitTriggered = true
-	return &gorm.DB{}
+	return m
 }
 
-func (m *TestDB) Association(column string) *gorm.Association {
+func (m *MockDB) Association(column string) *MockAssociation {
 	return m.mockAssociation
 }
 
-// Mock Association to capture append calls
-type TestAssociation struct {
+type MockAssociation struct {
 	appendError error
 }
 
-func (m *TestAssociation) Append(values ...interface{}) *gorm.Association {
-	return &gorm.Association{Error: m.appendError}
+func (m *MockAssociation) Append(values ...interface{}) *MockAssociation {
+	return &MockAssociation{appendError: m.appendError}
 }
 
 type TestArticleStore struct {
-	db *TestDB
+	db *MockDB
 }
 
 func (s *TestArticleStore) AddFavorite(a *model.Article, u *model.User) error {
@@ -76,14 +76,14 @@ func (s *TestArticleStore) AddFavorite(a *model.Article, u *model.User) error {
 	tx := s.db.Begin()
 
 	err := tx.Model(a).Association("FavoritedUsers").
-		Append(u).Error
+		Append(u).appendError
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	err = tx.Model(a).
-		Update("favorites_count", gorm.Expr("favorites_count + ?", 1)).Error
+		Update("favorites_count", gorm.Expr("favorites_count + ?", 1)).appendError
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -95,8 +95,6 @@ func (s *TestArticleStore) AddFavorite(a *model.Article, u *model.User) error {
 	return nil
 }
 
-
-// TestArticleStoreAddFavorite test function
 func TestArticleStoreAddFavorite(t *testing.T) {
 
 	tests := []struct {
@@ -153,8 +151,8 @@ func TestArticleStoreAddFavorite(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db := &TestDB{
-				mockAssociation: &TestAssociation{appendError: test.appendError},
+			db := &MockDB{
+				mockAssociation: &MockAssociation{appendError: test.appendError},
 				mockModel:       test.article,
 			}
 
