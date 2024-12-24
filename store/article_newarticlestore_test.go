@@ -3,6 +3,8 @@
 /*
 
 roost_feedback [12/24/2024, 12:19:49 PM]:- Add more comments to the test
+
+roost_feedback [12/24/2024, 12:33:56 PM]:- Add more comments to the test
 */
 
 // ********RoostGPT********
@@ -18,9 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// T struct definitions seems to be unused and are redundant, hence not included in the improved code.
-
-// TestNewArticleStore tests the creation of new ArticleStore with various database instances
+// TestNewArticleStore checks the functionality of new ArticleStore creation
 func TestNewArticleStore(t *testing.T) {
 	var cases = []struct {
 		name     string
@@ -41,46 +41,40 @@ func TestNewArticleStore(t *testing.T) {
 		},
 	}
 
-	// Loop through test cases
+	// Iterating through different test cases
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			// Create a new mock database if the test case db is not nil
+			// Initiate a new mock database if db is not nil
 			if tc.db != nil {
-				// Create a new sql mock database
 				db, mock, err := sqlmock.New()
 				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+					t.Fatalf("Unexpected error when opening a stub database connection: %s", err)
 				}
 
-				// Open the mock db with gorm
 				gormDB, err := gorm.Open("postgres", db)
 				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening gorm database", err)
+					t.Fatalf("Unexpected error when opening gorm database connection: %s", err)
 				}
 
-				// Set test case db to the mock gorm db
 				tc.db = gormDB
-
-				// Ensure to close db after the test
-				defer tc.db.Close()
+				defer tc.db.Close() // Ensuring the db is closed post test
 			}
 
-			// Test function NewArticleStore
+			// Testing NewArticleStore function
 			got := NewArticleStore(tc.db)
 
-			// Log function execution
-			t.Log("Executed function NewArticleStore with db - ", tc.db)
+			t.Log("Executed NewArticleStore function with db: ", tc.db)
 
-			// Check if the function result matches the expected result
+			// Assert equality for expected and returned values from the function
 			assert.Equal(t, tc.expected, got)
 
-			// Check if all mock expectations were met
+			// Verify if all mock expectations are met in test cases with database specified
 			if tc.db != nil {
 				if assert.NoError(t, mock.ExpectationsWereMet()) {
-					t.Log("All mock expectations met")
+					t.Log("All mock expectations were fulfilled.")
 				} else {
-					t.Log("Mock expectations failed")
+					t.Log("Some mock expectations were not met.")
 				}
 			}
 		})
