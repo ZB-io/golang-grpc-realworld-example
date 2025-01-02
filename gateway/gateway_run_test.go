@@ -1,39 +1,38 @@
+
+// ********RoostGPT********
+/*
+
+roost_feedback [1/2/2025, 11:46:18 AM]:Need to Improve some test of this
+*/
+
+// ********RoostGPT********
+
 package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"flag"
 	"log"
 	"net/http"
+	"sync"
 	"testing"
+
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/raahii/golang-grpc-realworld-example/proto"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 )
 
-var mockRegisterUsersHandlerFromEndpoint func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) errormockRegisterArticlesHandlerFromEndpoint func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) errormockListenAndServe func(addr string, handler http.Handler) error
-var mockRegisterUsersHandlerFromEndpoint func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) errormockRegisterArticlesHandlerFromEndpoint func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error
-var mockRegisterUsersHandlerFromEndpoint func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) errortype Controller struct {
+type Controller struct {
 	mu            sync.Mutex
-	t             TestReporter
-	expectedCalls *callSet
+	t             gomock.TestReporter
+	expectedCalls *gomock.CallSet
 	finished      bool
 }
 
-type T struct {
-	common
-	isEnvSet bool
-	context  *testContext // For running tests and subtests.
-}
-
-
-
-type T struct {
-	common
-	isEnvSet bool
-	context  *testContext // For running tests and subtests.
-}
 func TestRun(t *testing.T) {
 	originalRegisterUsersHandlerFromEndpoint := proto.RegisterUsersHandlerFromEndpoint
 	originalRegisterArticlesHandlerFromEndpoint := proto.RegisterArticlesHandlerFromEndpoint
@@ -112,6 +111,7 @@ func TestRun(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
