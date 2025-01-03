@@ -3,6 +3,8 @@
 /*
 
 roost_feedback [1/2/2025, 11:46:18 AM]:Need to Improve some test of this
+
+roost_feedback [1/3/2025, 3:48:48 AM]:Need to Improve some test of this
 */
 
 // ********RoostGPT********
@@ -141,8 +143,10 @@ func TestRun(t *testing.T) {
 			if tt.expectedError != nil {
 				assert.NotNil(t, err, "Expected error but got none")
 				assert.EqualError(t, err, tt.expectedError.Error())
+				assert.Contains(t, buf.String(), tt.expectedError.Error(), "Expected log message containing error")
 			} else {
 				assert.NoError(t, err, "Expected no error but got one")
+				assert.Contains(t, buf.String(), "Server started", "Expected log message indicating server start")
 			}
 
 			t.Log("Test", tt.name, "completed with error:", err)
