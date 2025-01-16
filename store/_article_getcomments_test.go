@@ -6,109 +6,115 @@ ROOST_METHOD_HASH=GetComments_e24a0f1b73
 ROOST_METHOD_SIG_HASH=GetComments_fa6661983e
 
 FUNCTION_DEF=func (s *ArticleStore) GetComments(m *model.Article) ([]model.Comment, error)
-Here are several test scenarios for the GetComments function:
+Based on the provided function and context, here are several test scenarios for the `GetComments` method of the `ArticleStore` struct:
 
 ```
 Scenario 1: Successfully retrieve comments for an article
 
 Details:
-  Description: This test verifies that the GetComments function correctly retrieves all comments associated with a given article, including the author information for each comment.
+  Description: This test verifies that the GetComments function correctly retrieves all comments associated with a given article, including the preloaded Author information.
 Execution:
   Arrange:
-    - Create a test database and populate it with a sample article and multiple comments.
-    - Ensure the comments have different authors.
-    - Create an ArticleStore instance with the test database.
+    - Create a mock gorm.DB
+    - Set up an Article with a known ID
+    - Prepare a slice of Comments associated with the Article ID
+    - Configure the mock DB to return these comments when queried
   Act:
-    - Call GetComments with the sample article.
+    - Call GetComments with the prepared Article
   Assert:
-    - Verify that the returned slice of comments matches the expected number of comments.
-    - Check that each comment's ArticleID matches the input article's ID.
-    - Ensure that the Author field is populated for each comment.
+    - Verify that the returned slice of Comments matches the prepared data
+    - Check that the Author information is preloaded for each Comment
+    - Ensure no error is returned
 Validation:
-  This test is crucial to ensure the core functionality of retrieving comments works as expected. It validates that the Preload("Author") is working correctly and that the WHERE clause is filtering comments properly.
+  This test is crucial to ensure the core functionality of retrieving comments works as expected. It validates that the database query is constructed correctly, including the preloading of the Author relationship.
 
 Scenario 2: Retrieve comments for an article with no comments
 
 Details:
-  Description: This test checks the behavior of GetComments when called for an article that has no associated comments.
+  Description: This test checks the behavior of GetComments when an article has no associated comments.
 Execution:
   Arrange:
-    - Create a test database with a sample article but no comments.
-    - Create an ArticleStore instance with the test database.
+    - Create a mock gorm.DB
+    - Set up an Article with a known ID
+    - Configure the mock DB to return an empty slice of Comments
   Act:
-    - Call GetComments with the sample article.
+    - Call GetComments with the prepared Article
   Assert:
-    - Verify that the returned slice of comments is empty.
-    - Ensure that no error is returned.
+    - Verify that an empty slice of Comments is returned
+    - Ensure no error is returned
 Validation:
-  This test is important to verify that the function handles the edge case of an article with no comments gracefully, returning an empty slice rather than an error.
+  This test is important to confirm that the function handles the case of no comments gracefully, returning an empty slice rather than nil or an error.
 
 Scenario 3: Handle database error when retrieving comments
 
 Details:
-  Description: This test verifies that the GetComments function properly handles and returns any database errors that occur during the query execution.
+  Description: This test verifies that the GetComments function properly handles and returns database errors.
 Execution:
   Arrange:
-    - Create a mock database that returns an error when the Find method is called.
-    - Create an ArticleStore instance with the mock database.
+    - Create a mock gorm.DB
+    - Set up an Article with a known ID
+    - Configure the mock DB to return an error when queried
   Act:
-    - Call GetComments with any valid article model.
+    - Call GetComments with the prepared Article
   Assert:
-    - Verify that the function returns an error.
-    - Ensure that the returned slice of comments is empty.
+    - Verify that an error is returned
+    - Check that the returned slice of Comments is empty
 Validation:
-  This test is critical for error handling. It ensures that database errors are not silently ignored and are properly propagated to the caller, allowing for appropriate error handling at higher levels of the application.
+  This test ensures that the function correctly propagates database errors to the caller, allowing for proper error handling at higher levels of the application.
 
-Scenario 4: Retrieve comments for a non-existent article
+Scenario 4: Verify correct query construction
 
 Details:
-  Description: This test checks the behavior of GetComments when called with an article ID that doesn't exist in the database.
+  Description: This test checks that the database query is constructed correctly, including the WHERE clause and Preload directive.
 Execution:
   Arrange:
-    - Create a test database with some articles and comments.
-    - Create an ArticleStore instance with the test database.
-    - Create a model.Article instance with an ID that doesn't exist in the database.
+    - Create a mock gorm.DB that captures the query construction
+    - Set up an Article with a known ID
   Act:
-    - Call GetComments with the non-existent article.
+    - Call GetComments with the prepared Article
   Assert:
-    - Verify that the returned slice of comments is empty.
-    - Ensure that no error is returned.
+    - Verify that the WHERE clause includes the correct Article ID
+    - Check that the Preload directive for "Author" is included in the query
 Validation:
-  This test is important to verify that the function behaves correctly when querying for comments on an article that doesn't exist, returning an empty slice rather than an error.
+  This test is important to ensure that the database query is optimized and includes only the necessary data, which impacts performance and data integrity.
 
-Scenario 5: Verify correct ordering of retrieved comments
+Scenario 5: Handle large number of comments
 
 Details:
-  Description: This test ensures that the comments are retrieved in the correct order (assuming a default order by creation time).
+  Description: This test verifies that the GetComments function can handle retrieving a large number of comments without issues.
 Execution:
   Arrange:
-    - Create a test database with an article and multiple comments created at different times.
-    - Create an ArticleStore instance with the test database.
+    - Create a mock gorm.DB
+    - Set up an Article with a known ID
+    - Prepare a large slice of Comments (e.g., 1000 comments) associated with the Article ID
+    - Configure the mock DB to return these comments when queried
   Act:
-    - Call GetComments with the article.
+    - Call GetComments with the prepared Article
   Assert:
-    - Verify that the returned slice of comments is in the correct order (e.g., newest first or oldest first, depending on the expected behavior).
+    - Verify that all comments are retrieved correctly
+    - Check that the function doesn't timeout or cause memory issues
 Validation:
-  This test is important to ensure that the comments are consistently retrieved in the expected order, which is crucial for displaying them correctly in the user interface.
+  This test ensures that the function can handle scale and performs well under load, which is crucial for articles that may have a high number of comments.
 
-Scenario 6: Verify performance with a large number of comments
+Scenario 6: Verify comment order
 
 Details:
-  Description: This test checks the performance of GetComments when dealing with an article that has a large number of comments.
+  Description: This test checks if the comments are returned in the expected order (assuming a default order is applied).
 Execution:
   Arrange:
-    - Create a test database with an article and a very large number of comments (e.g., 10,000).
-    - Create an ArticleStore instance with the test database.
+    - Create a mock gorm.DB
+    - Set up an Article with a known ID
+    - Prepare a slice of Comments with known creation times
+    - Configure the mock DB to return these comments when queried
   Act:
-    - Call GetComments with the article, measuring the execution time.
+    - Call GetComments with the prepared Article
   Assert:
-    - Verify that all comments are retrieved correctly.
-    - Ensure that the execution time is within acceptable limits.
+    - Verify that the comments are returned in the expected order (e.g., newest first)
 Validation:
-  This test is important to identify any performance issues that might arise when dealing with articles that have a large number of comments, ensuring that the function remains efficient at scale.
+  This test is important to ensure consistent behavior in comment display, which affects user experience when viewing article comments.
 ```
 
-These test scenarios cover a range of normal operations, edge cases, and error handling for the GetComments function. They aim to ensure the function works correctly under various conditions and handles different scenarios appropriately.
+These test scenarios cover various aspects of the `GetComments` function, including normal operation, edge cases, and error handling. They take into account the provided context, such as the use of GORM and the preloading of the Author relationship. When implementing these tests, you would use Go's testing package and potentially a mocking library to set up the necessary test doubles for the gorm.DB interactions.
 */
 
 // ********RoostGPT********
@@ -116,173 +122,143 @@ package store
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
-	"github.com/stretchr/testify/assert"
 )
 
-// MockDB is a mock implementation of *gorm.DB
-type MockDB struct {
-	FindFunc func(dest interface{}) *MockDB
-	Error    error
+// Mock DB structure
+type mockDB struct {
+	findFunc func(dest interface{}) error
 }
 
-func (m *MockDB) Preload(column string, conditions ...interface{}) *MockDB {
-	return m
+func (m *mockDB) Where(query interface{}, args ...interface{}) *gorm.DB {
+	return &gorm.DB{Error: nil}
 }
 
-func (m *MockDB) Where(query interface{}, args ...interface{}) *MockDB {
-	return m
+func (m *mockDB) Preload(column string, conditions ...interface{}) *gorm.DB {
+	return &gorm.DB{Error: nil}
 }
 
-func (m *MockDB) Find(dest interface{}) *MockDB {
-	return m.FindFunc(dest)
+func (m *mockDB) Find(dest interface{}) *gorm.DB {
+	return &gorm.DB{Error: m.findFunc(dest)}
 }
 
 func TestArticleStoreGetComments(t *testing.T) {
 	tests := []struct {
 		name           string
 		article        *model.Article
-		setupMockDB    func() *MockDB
+		mockFindFunc   func(dest interface{}) error
 		expectedResult []model.Comment
 		expectedError  error
 	}{
 		{
-			name: "Successfully retrieve comments for an article",
-			article: &model.Article{
-				Model: gorm.Model{ID: 1},
-			},
-			setupMockDB: func() *MockDB {
-				return &MockDB{
-					FindFunc: func(dest interface{}) *MockDB {
-						comments := dest.(*[]model.Comment)
-						*comments = []model.Comment{
-							{Model: gorm.Model{ID: 1}, Body: "Comment 1", ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 1}, Username: "user1"}},
-							{Model: gorm.Model{ID: 2}, Body: "Comment 2", ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 2}, Username: "user2"}},
-						}
-						return &MockDB{}
-					},
+			name:    "Successfully retrieve comments",
+			article: &model.Article{Model: gorm.Model{ID: 1}},
+			mockFindFunc: func(dest interface{}) error {
+				comments := []model.Comment{
+					{Model: gorm.Model{ID: 1}, Body: "Comment 1", UserID: 1, ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 1}, Username: "user1"}},
+					{Model: gorm.Model{ID: 2}, Body: "Comment 2", UserID: 2, ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 2}, Username: "user2"}},
 				}
+				reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(comments))
+				return nil
 			},
 			expectedResult: []model.Comment{
-				{Model: gorm.Model{ID: 1}, Body: "Comment 1", ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 1}, Username: "user1"}},
-				{Model: gorm.Model{ID: 2}, Body: "Comment 2", ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 2}, Username: "user2"}},
+				{Model: gorm.Model{ID: 1}, Body: "Comment 1", UserID: 1, ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 1}, Username: "user1"}},
+				{Model: gorm.Model{ID: 2}, Body: "Comment 2", UserID: 2, ArticleID: 1, Author: model.User{Model: gorm.Model{ID: 2}, Username: "user2"}},
 			},
 			expectedError: nil,
 		},
 		{
-			name: "Retrieve comments for an article with no comments",
-			article: &model.Article{
-				Model: gorm.Model{ID: 2},
-			},
-			setupMockDB: func() *MockDB {
-				return &MockDB{
-					FindFunc: func(dest interface{}) *MockDB {
-						return &MockDB{}
-					},
-				}
+			name:    "Retrieve comments for article with no comments",
+			article: &model.Article{Model: gorm.Model{ID: 2}},
+			mockFindFunc: func(dest interface{}) error {
+				return nil
 			},
 			expectedResult: []model.Comment{},
 			expectedError:  nil,
 		},
 		{
-			name: "Handle database error when retrieving comments",
-			article: &model.Article{
-				Model: gorm.Model{ID: 3},
-			},
-			setupMockDB: func() *MockDB {
-				return &MockDB{
-					FindFunc: func(dest interface{}) *MockDB {
-						return &MockDB{Error: errors.New("database error")}
-					},
-				}
+			name:    "Handle database error",
+			article: &model.Article{Model: gorm.Model{ID: 3}},
+			mockFindFunc: func(dest interface{}) error {
+				return errors.New("database error")
 			},
 			expectedResult: []model.Comment{},
 			expectedError:  errors.New("database error"),
 		},
 		{
-			name: "Retrieve comments for a non-existent article",
-			article: &model.Article{
-				Model: gorm.Model{ID: 999},
-			},
-			setupMockDB: func() *MockDB {
-				return &MockDB{
-					FindFunc: func(dest interface{}) *MockDB {
-						return &MockDB{}
-					},
+			name:    "Handle large number of comments",
+			article: &model.Article{Model: gorm.Model{ID: 4}},
+			mockFindFunc: func(dest interface{}) error {
+				comments := make([]model.Comment, 1000)
+				for i := 0; i < 1000; i++ {
+					comments[i] = model.Comment{
+						Model:     gorm.Model{ID: uint(i + 1)},
+						Body:      "Comment",
+						UserID:    1,
+						ArticleID: 4,
+						Author:    model.User{Model: gorm.Model{ID: 1}, Username: "user1"},
+					}
 				}
+				reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(comments))
+				return nil
 			},
-			expectedResult: []model.Comment{},
+			expectedResult: make([]model.Comment, 1000), // We'll check the length in the test
 			expectedError:  nil,
 		},
 		{
-			name: "Verify correct ordering of retrieved comments",
-			article: &model.Article{
-				Model: gorm.Model{ID: 4},
-			},
-			setupMockDB: func() *MockDB {
-				return &MockDB{
-					FindFunc: func(dest interface{}) *MockDB {
-						comments := dest.(*[]model.Comment)
-						*comments = []model.Comment{
-							{Model: gorm.Model{ID: 3, CreatedAt: time.Now().Add(-1 * time.Hour)}, Body: "Older Comment", ArticleID: 4},
-							{Model: gorm.Model{ID: 4, CreatedAt: time.Now()}, Body: "Newer Comment", ArticleID: 4},
-						}
-						return &MockDB{}
-					},
+			name:    "Verify comment order",
+			article: &model.Article{Model: gorm.Model{ID: 5}},
+			mockFindFunc: func(dest interface{}) error {
+				now := time.Now()
+				comments := []model.Comment{
+					{Model: gorm.Model{ID: 1, CreatedAt: now.Add(-2 * time.Hour)}, Body: "Old Comment", UserID: 1, ArticleID: 5, Author: model.User{Model: gorm.Model{ID: 1}, Username: "user1"}},
+					{Model: gorm.Model{ID: 2, CreatedAt: now.Add(-1 * time.Hour)}, Body: "Newer Comment", UserID: 2, ArticleID: 5, Author: model.User{Model: gorm.Model{ID: 2}, Username: "user2"}},
+					{Model: gorm.Model{ID: 3, CreatedAt: now}, Body: "Newest Comment", UserID: 3, ArticleID: 5, Author: model.User{Model: gorm.Model{ID: 3}, Username: "user3"}},
 				}
+				reflect.ValueOf(dest).Elem().Set(reflect.ValueOf(comments))
+				return nil
 			},
 			expectedResult: []model.Comment{
-				{Model: gorm.Model{ID: 3}, Body: "Older Comment", ArticleID: 4},
-				{Model: gorm.Model{ID: 4}, Body: "Newer Comment", ArticleID: 4},
+				{Model: gorm.Model{ID: 3}, Body: "Newest Comment", UserID: 3, ArticleID: 5, Author: model.User{Model: gorm.Model{ID: 3}, Username: "user3"}},
+				{Model: gorm.Model{ID: 2}, Body: "Newer Comment", UserID: 2, ArticleID: 5, Author: model.User{Model: gorm.Model{ID: 2}, Username: "user2"}},
+				{Model: gorm.Model{ID: 1}, Body: "Old Comment", UserID: 1, ArticleID: 5, Author: model.User{Model: gorm.Model{ID: 1}, Username: "user1"}},
 			},
 			expectedError: nil,
-		},
-		{
-			name: "Verify performance with a large number of comments",
-			article: &model.Article{
-				Model: gorm.Model{ID: 5},
-			},
-			setupMockDB: func() *MockDB {
-				return &MockDB{
-					FindFunc: func(dest interface{}) *MockDB {
-						comments := dest.(*[]model.Comment)
-						*comments = make([]model.Comment, 10000)
-						for i := 0; i < 10000; i++ {
-							(*comments)[i] = model.Comment{
-								Model:     gorm.Model{ID: uint(i + 1)},
-								Body:      "Comment body",
-								ArticleID: 5,
-							}
-						}
-						return &MockDB{}
-					},
-				}
-			},
-			expectedResult: make([]model.Comment, 10000), // We'll check the length, not the content
-			expectedError:  nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDB := tt.setupMockDB()
+			mockDB := &mockDB{findFunc: tt.mockFindFunc}
 			store := &ArticleStore{db: mockDB}
 
-			start := time.Now()
 			result, err := store.GetComments(tt.article)
-			duration := time.Since(start)
 
-			assert.Equal(t, tt.expectedError, err)
-			assert.Equal(t, len(tt.expectedResult), len(result))
+			if !reflect.DeepEqual(err, tt.expectedError) {
+				t.Errorf("GetComments() error = %v, expectedError %v", err, tt.expectedError)
+				return
+			}
 
-			if tt.name == "Verify performance with a large number of comments" {
-				assert.Less(t, duration, 100*time.Millisecond, "GetComments took too long for a large number of comments")
-			} else if len(tt.expectedResult) > 0 {
-				assert.Equal(t, tt.expectedResult, result)
+			if tt.name == "Handle large number of comments" {
+				if len(result) != 1000 {
+					t.Errorf("GetComments() result length = %d, expected 1000", len(result))
+				}
+			} else if !reflect.DeepEqual(result, tt.expectedResult) {
+				t.Errorf("GetComments() result = %v, expected %v", result, tt.expectedResult)
+			}
+
+			if tt.name == "Verify comment order" {
+				for i := 1; i < len(result); i++ {
+					if result[i].CreatedAt.After(result[i-1].CreatedAt) {
+						t.Errorf("Comments are not in the expected order")
+						break
+					}
+				}
 			}
 		})
 	}

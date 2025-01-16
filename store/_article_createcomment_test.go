@@ -16,7 +16,7 @@ Details:
 Execution:
   Arrange:
     - Create a mock gorm.DB instance
-    - Prepare a valid model.Comment struct with all required fields filled
+    - Prepare a valid model.Comment struct with all required fields
   Act:
     - Call the CreateComment function with the prepared comment
   Assert:
@@ -28,85 +28,85 @@ Validation:
 Scenario 2: Attempt to Create a Comment with Missing Required Fields
 
 Details:
-  Description: This test checks the behavior when trying to create a comment with missing required fields (e.g., empty Body or invalid UserID).
+  Description: This test checks the behavior when trying to create a comment with missing required fields (e.g., empty Body or zero UserID).
 Execution:
   Arrange:
     - Create a mock gorm.DB instance
-    - Prepare an invalid model.Comment struct with missing or invalid required fields
+    - Prepare an invalid model.Comment struct with missing required fields
   Act:
     - Call the CreateComment function with the invalid comment
   Assert:
-    - Verify that the function returns a non-nil error
-    - Check that no comment was created in the database
+    - Expect a non-nil error to be returned
+    - Verify that no comment was added to the database
 Validation:
-  This test ensures that the function properly handles invalid input and maintains data integrity by not allowing incomplete or invalid comments to be stored.
+  This test ensures that the function properly handles invalid input and maintains data integrity by not allowing incomplete comments to be stored.
 
-Scenario 3: Create Comment with Maximum Length Body
+Scenario 3: Create Comment with Very Long Body Text
 
 Details:
-  Description: This test verifies that a comment with the maximum allowed length for the Body field can be created successfully.
+  Description: This test checks if the function can handle creating a comment with a very long body text, approaching or exceeding any potential database limits.
 Execution:
   Arrange:
     - Create a mock gorm.DB instance
-    - Prepare a valid model.Comment struct with a Body field at the maximum allowed length
+    - Prepare a valid model.Comment struct with an extremely long Body field
+  Act:
+    - Call the CreateComment function with the prepared comment
+  Assert:
+    - Check if the function returns an error or succeeds
+    - If it succeeds, verify the comment was stored correctly with the full text
+Validation:
+  This test ensures that the system can handle edge cases with large amounts of text, which is important for user experience and data integrity.
+
+Scenario 4: Create Multiple Comments in Quick Succession
+
+Details:
+  Description: This test verifies that the function can handle creating multiple comments rapidly, simulating high concurrent usage.
+Execution:
+  Arrange:
+    - Create a mock gorm.DB instance
+    - Prepare multiple valid model.Comment structs
+  Act:
+    - Call the CreateComment function multiple times in quick succession, possibly using goroutines
+  Assert:
+    - Verify that all comments are created successfully without errors
+    - Check that all comments are present in the database with correct data
+Validation:
+  This test ensures that the function can handle high load scenarios, which is crucial for scalability and reliability of the commenting system.
+
+Scenario 5: Attempt to Create a Comment for a Non-existent Article
+
+Details:
+  Description: This test checks the behavior when trying to create a comment for an article that doesn't exist in the database.
+Execution:
+  Arrange:
+    - Create a mock gorm.DB instance
+    - Prepare a valid model.Comment struct but with a non-existent ArticleID
+  Act:
+    - Call the CreateComment function with the prepared comment
+  Assert:
+    - Expect a foreign key constraint violation error or similar
+    - Verify that no comment was added to the database
+Validation:
+  This test ensures data integrity by preventing orphaned comments that aren't associated with valid articles.
+
+Scenario 6: Create Comment with Special Characters in the Body
+
+Details:
+  Description: This test verifies that the function can handle and correctly store comments containing special characters, Unicode, or potentially problematic strings.
+Execution:
+  Arrange:
+    - Create a mock gorm.DB instance
+    - Prepare a valid model.Comment struct with a Body containing special characters, emojis, or SQL injection attempts
   Act:
     - Call the CreateComment function with the prepared comment
   Assert:
     - Verify that the function returns nil error
-    - Check that the comment was created in the database with the full body text intact
+    - Check that the comment was stored in the database with the exact string as provided
 Validation:
-  This test ensures that the function can handle comments at the upper limit of allowed size, which is important for user experience and system stability.
-
-Scenario 4: Attempt to Create Comment When Database is Unavailable
-
-Details:
-  Description: This test checks the behavior of the function when the database connection is lost or unavailable.
-Execution:
-  Arrange:
-    - Create a mock gorm.DB instance configured to simulate a database connection failure
-    - Prepare a valid model.Comment struct
-  Act:
-    - Call the CreateComment function with the prepared comment
-  Assert:
-    - Verify that the function returns a non-nil error indicating a database connection issue
-    - Check that no comment was created
-Validation:
-  This test ensures that the function gracefully handles database connectivity issues, which is crucial for error reporting and system reliability.
-
-Scenario 5: Create Comment with Special Characters in Body
-
-Details:
-  Description: This test verifies that a comment containing special characters and Unicode text in the Body field can be created successfully.
-Execution:
-  Arrange:
-    - Create a mock gorm.DB instance
-    - Prepare a valid model.Comment struct with a Body containing special characters and Unicode text
-  Act:
-    - Call the CreateComment function with the prepared comment
-  Assert:
-    - Verify that the function returns nil error
-    - Check that the comment was created in the database with the special characters and Unicode text preserved correctly
-Validation:
-  This test ensures that the function properly handles and stores various types of text input, which is important for supporting international users and diverse content.
-
-Scenario 6: Attempt to Create Duplicate Comment
-
-Details:
-  Description: This test checks the behavior when trying to create a comment that is identical to an existing one (same Body, UserID, and ArticleID).
-Execution:
-  Arrange:
-    - Create a mock gorm.DB instance
-    - Prepare a valid model.Comment struct
-    - Insert an identical comment into the mock database
-  Act:
-    - Call the CreateComment function with the prepared comment
-  Assert:
-    - Verify the function's behavior (returns error or creates duplicate, depending on the intended functionality)
-Validation:
-  This test ensures that the system handles potential duplicate comments appropriately, which may be important for preventing spam or maintaining data uniqueness, depending on the application's requirements.
+  This test ensures that the system properly handles and sanitizes input, preventing potential security issues and ensuring correct storage of various types of user input.
 ```
 
-These test scenarios cover various aspects of the `CreateComment` function, including normal operation, edge cases, and error handling. They take into account the provided struct definitions and the context of the function within the larger application.
+These scenarios cover a range of normal operations, edge cases, and potential error conditions for the `CreateComment` function. They test the basic functionality, data validation, performance under load, error handling, and input sanitization aspects of the function.
 */
 
 // ********RoostGPT********
@@ -118,32 +118,23 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
+	"github.com/stretchr/testify/assert"
 )
 
-// DBInterface is an interface that both *gorm.DB and our mock can implement
-type DBInterface interface {
-	Create(value interface{}) *gorm.DB
+// mockDB implements the necessary methods of gorm.DB for our test
+type mockDB struct {
+	createFunc func(interface{}) error
 }
 
-// MockDB is a mock implementation of DBInterface
-type MockDB struct {
-	CreateFunc func(value interface{}) *gorm.DB
-}
-
-func (m *MockDB) Create(value interface{}) *gorm.DB {
-	return m.CreateFunc(value)
-}
-
-// Modify ArticleStore to use DBInterface instead of *gorm.DB
-type ArticleStore struct {
-	db DBInterface
+func (m *mockDB) Create(value interface{}) *gorm.DB {
+	return &gorm.DB{Error: m.createFunc(value)}
 }
 
 func TestArticleStoreCreateComment(t *testing.T) {
 	tests := []struct {
 		name    string
 		comment *model.Comment
-		mockDB  func() *MockDB
+		mockDB  func(comment *model.Comment) *mockDB
 		wantErr bool
 	}{
 		{
@@ -153,10 +144,10 @@ func TestArticleStoreCreateComment(t *testing.T) {
 				UserID:    1,
 				ArticleID: 1,
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
+			mockDB: func(comment *model.Comment) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) error {
+						return nil
 					},
 				}
 			},
@@ -165,105 +156,81 @@ func TestArticleStoreCreateComment(t *testing.T) {
 		{
 			name: "Attempt to Create a Comment with Missing Required Fields",
 			comment: &model.Comment{
-				// Missing Body
-				UserID:    1,
-				ArticleID: 1,
+				Body: "",
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: errors.New("missing required fields")}
+			mockDB: func(comment *model.Comment) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) error {
+						return errors.New("missing required fields")
 					},
 				}
 			},
 			wantErr: true,
 		},
 		{
-			name: "Create Comment with Maximum Length Body",
+			name: "Create Comment with Very Long Body Text",
 			comment: &model.Comment{
-				Body:      string(make([]byte, 65535)), // Max length for TEXT in MySQL
+				Body:      string(make([]byte, 10000)), // 10000 character long body
 				UserID:    1,
 				ArticleID: 1,
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
+			mockDB: func(comment *model.Comment) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) error {
+						return nil
 					},
 				}
 			},
 			wantErr: false,
 		},
 		{
-			name: "Attempt to Create Comment When Database is Unavailable",
+			name: "Attempt to Create a Comment for a Non-existent Article",
 			comment: &model.Comment{
 				Body:      "Test comment",
 				UserID:    1,
-				ArticleID: 1,
+				ArticleID: 9999, // Non-existent article ID
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: errors.New("database connection lost")}
+			mockDB: func(comment *model.Comment) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) error {
+						return errors.New("foreign key constraint violation")
 					},
 				}
 			},
 			wantErr: true,
 		},
 		{
-			name: "Create Comment with Special Characters in Body",
+			name: "Create Comment with Special Characters in the Body",
 			comment: &model.Comment{
-				Body:      "Test comment with special characters: !@#$%^&*()_+ and Unicode: こんにちは",
+				Body:      "Test comment with special characters: !@#$%^&*()_+ 你好 😊",
 				UserID:    1,
 				ArticleID: 1,
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
+			mockDB: func(comment *model.Comment) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) error {
+						return nil
 					},
 				}
 			},
 			wantErr: false,
-		},
-		{
-			name: "Attempt to Create Duplicate Comment",
-			comment: &model.Comment{
-				Body:      "Duplicate comment",
-				UserID:    1,
-				ArticleID: 1,
-			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: errors.New("duplicate entry")}
-					},
-				}
-			},
-			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDB := tt.mockDB()
+			mockDB := tt.mockDB(tt.comment)
 			s := &ArticleStore{
 				db: mockDB,
 			}
 
 			err := s.CreateComment(tt.comment)
 
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ArticleStore.CreateComment() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-
-			// Additional assertions can be added here if needed
-			// For example, checking if the comment was actually created in a real database
 		})
 	}
-}
-
-// CreateComment is the method being tested
-func (s *ArticleStore) CreateComment(m *model.Comment) error {
-	return s.db.Create(m).Error
 }

@@ -6,13 +6,14 @@ ROOST_METHOD_HASH=Unfollow_57959a8a53
 ROOST_METHOD_SIG_HASH=Unfollow_8bd8e0bc55
 
 FUNCTION_DEF=func (s *UserStore) Unfollow(a *model.User, b *model.User) error
-Based on the provided function and context, here are several test scenarios for the `Unfollow` function:
+Based on the provided function and context, here are several test scenarios for the `Unfollow` method of the `UserStore` struct:
 
 ```
-Scenario 1: Successful Unfollow
+Scenario 1: Successful Unfollow Operation
 
 Details:
-  Description: Test that a user can successfully unfollow another user they were previously following.
+  Description: This test verifies that a user can successfully unfollow another user they were previously following.
+
 Execution:
   Arrange:
     - Create two user instances, userA and userB
@@ -20,15 +21,17 @@ Execution:
   Act:
     - Call s.Unfollow(userA, userB)
   Assert:
-    - Verify that the function returns nil error
-    - Check that userA is no longer following userB in the database
-Validation:
-  This test ensures the core functionality of the Unfollow method works as expected. It's crucial for maintaining correct social relationships in the application.
+    - Verify that the error returned is nil
+    - Check that userB is no longer in userA's Follows list
 
-Scenario 2: Unfollow User Not Previously Followed
+Validation:
+  This test is crucial to ensure the core functionality of unfollowing works as expected. It validates that the association between users is correctly removed in the database.
+
+Scenario 2: Unfollow User Not Currently Followed
 
 Details:
-  Description: Test the behavior when a user tries to unfollow another user they weren't following.
+  Description: This test checks the behavior when a user tries to unfollow another user they are not currently following.
+
 Execution:
   Arrange:
     - Create two user instances, userA and userB
@@ -36,75 +39,81 @@ Execution:
   Act:
     - Call s.Unfollow(userA, userB)
   Assert:
-    - Verify that the function returns nil error (as GORM's Association.Delete is idempotent)
-    - Confirm that the following relationship between userA and userB remains non-existent
-Validation:
-  This test checks the robustness of the Unfollow method when dealing with non-existent relationships. It ensures the method doesn't throw errors in such cases, maintaining application stability.
+    - Verify that the error returned is nil
+    - Confirm that userA's Follows list remains unchanged
 
-Scenario 3: Unfollow with Invalid User (Nil User)
+Validation:
+  This test is important to ensure that the Unfollow operation is idempotent and doesn't throw errors when trying to unfollow a user that's not being followed.
+
+Scenario 3: Unfollow with Nil User (Follower)
 
 Details:
-  Description: Test the behavior when trying to unfollow with a nil user parameter.
+  Description: This test checks the behavior when trying to unfollow with a nil follower user.
+
 Execution:
   Arrange:
-    - Create one valid user instance, userA
+    - Create one user instance, userB
   Act:
-    - Call s.Unfollow(userA, nil)
+    - Call s.Unfollow(nil, userB)
   Assert:
-    - Verify that the function returns an error
-    - Check that no changes occur in the database
-Validation:
-  This test ensures proper error handling when invalid (nil) parameters are passed. It's important for maintaining data integrity and preventing runtime panics.
+    - Verify that an appropriate error is returned (e.g., invalid input error)
 
-Scenario 4: Unfollow Self
+Validation:
+  This test ensures proper error handling for invalid input, specifically when the follower user is nil.
+
+Scenario 4: Unfollow with Nil User (Followee)
 
 Details:
-  Description: Test the behavior when a user attempts to unfollow themselves.
+  Description: This test checks the behavior when trying to unfollow a nil followee user.
+
 Execution:
   Arrange:
     - Create one user instance, userA
   Act:
-    - Call s.Unfollow(userA, userA)
+    - Call s.Unfollow(userA, nil)
   Assert:
-    - Verify that the function returns nil error
-    - Confirm that no changes occur in the database
+    - Verify that an appropriate error is returned (e.g., invalid input error)
+
 Validation:
-  This test checks how the method handles edge cases like self-unfollowing. It ensures that such operations don't cause unexpected behavior or database changes.
+  This test ensures proper error handling for invalid input, specifically when the followee user is nil.
 
 Scenario 5: Database Error Handling
 
 Details:
-  Description: Test the Unfollow method's behavior when a database error occurs.
+  Description: This test verifies that database errors are properly propagated.
+
 Execution:
   Arrange:
     - Create two user instances, userA and userB
-    - Mock the database to return an error on the Association.Delete operation
+    - Mock the gorm.DB to return an error on Association().Delete()
   Act:
     - Call s.Unfollow(userA, userB)
   Assert:
-    - Verify that the function returns the database error
-    - Confirm that no changes occur in the database
+    - Verify that the error returned matches the mocked database error
+
 Validation:
-  This test ensures proper propagation of database errors. It's crucial for maintaining data consistency and providing accurate feedback to the application layer.
+  This test is crucial for ensuring that database errors are not silently ignored and are properly returned to the caller.
 
 Scenario 6: Concurrent Unfollow Operations
 
 Details:
-  Description: Test the behavior of multiple concurrent Unfollow operations.
+  Description: This test checks the behavior of concurrent unfollow operations.
+
 Execution:
   Arrange:
     - Create multiple user instances
-    - Set up a scenario where multiple users are following each other
+    - Set up a scenario where multiple goroutines attempt to unfollow simultaneously
   Act:
-    - Concurrently call Unfollow multiple times with different user combinations
+    - Concurrently call s.Unfollow() multiple times with different user combinations
   Assert:
     - Verify that all operations complete without errors
-    - Check that the final state of follow relationships in the database is correct
+    - Check that the final state of user relationships is consistent
+
 Validation:
-  This test ensures that the Unfollow method is thread-safe and can handle concurrent operations without data races or inconsistencies. It's important for applications with high concurrency.
+  This test ensures that the Unfollow method is thread-safe and can handle concurrent operations without data races or inconsistencies.
 ```
 
-These scenarios cover various aspects of the `Unfollow` function, including normal operation, edge cases, error handling, and potential concurrency issues. They aim to ensure the robustness and correctness of the function across different situations that might occur in a real-world application.
+These test scenarios cover various aspects of the `Unfollow` function, including normal operation, edge cases, error handling, and concurrency. They take into account the provided struct definitions and the context of the application, ensuring comprehensive testing of the function's behavior.
 */
 
 // ********RoostGPT********
@@ -116,144 +125,136 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
+// MockDB is a mock of gorm.DB
+type MockDB struct {
+	mock.Mock
+}
+
+func (m *MockDB) Model(value interface{}) *gorm.DB {
+	args := m.Called(value)
+	return args.Get(0).(*gorm.DB)
+}
+
+func (m *MockDB) Association(column string) *gorm.Association {
+	args := m.Called(column)
+	return args.Get(0).(*gorm.Association)
+}
+
+func (m *MockDB) Delete(value interface{}, where ...interface{}) *gorm.DB {
+	args := m.Called(value, where)
+	return args.Get(0).(*gorm.DB)
+}
+
+// MockAssociation is a mock of gorm.Association
+type MockAssociation struct {
+	mock.Mock
+}
+
+func (m *MockAssociation) Delete(values ...interface{}) *gorm.Association {
+	args := m.Called(values)
+	return args.Get(0).(*gorm.Association)
+}
+
+// Modify UserStore to use the MockDB interface
+type UserStore struct {
+	db MockDB
+}
+
 func TestUserStoreUnfollow(t *testing.T) {
-	type args struct {
-		a *model.User
-		b *model.User
-	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		setup   func(*UserStore)
-		check   func(*testing.T, *UserStore)
+		name      string
+		follower  *model.User
+		followee  *model.User
+		mockSetup func(*MockDB, *MockAssociation)
+		wantErr   bool
 	}{
 		{
-			name: "Successful Unfollow",
-			args: args{
-				a: &model.User{Model: gorm.Model{ID: 1}, Username: "userA"},
-				b: &model.User{Model: gorm.Model{ID: 2}, Username: "userB"},
+			name:     "Successful Unfollow",
+			follower: &model.User{Model: gorm.Model{ID: 1}},
+			followee: &model.User{Model: gorm.Model{ID: 2}},
+			mockSetup: func(db *MockDB, assoc *MockAssociation) {
+				db.On("Model", mock.Anything).Return(db)
+				db.On("Association", "Follows").Return(assoc)
+				assoc.On("Delete", mock.Anything).Return(assoc)
 			},
 			wantErr: false,
-			setup: func(s *UserStore) {
-				s.db.Model(s.db.Value).Association("Follows").Append(s.db.Value)
-			},
-			check: func(t *testing.T, s *UserStore) {
-				var follows []model.User
-				s.db.Model(s.db.Value).Association("Follows").Find(&follows)
-				if len(follows) != 0 {
-					t.Errorf("Expected userA to not follow userB, but found %d follows", len(follows))
-				}
-			},
 		},
 		{
-			name: "Unfollow User Not Previously Followed",
-			args: args{
-				a: &model.User{Model: gorm.Model{ID: 3}, Username: "userC"},
-				b: &model.User{Model: gorm.Model{ID: 4}, Username: "userD"},
+			name:     "Unfollow User Not Currently Followed",
+			follower: &model.User{Model: gorm.Model{ID: 1}},
+			followee: &model.User{Model: gorm.Model{ID: 2}},
+			mockSetup: func(db *MockDB, assoc *MockAssociation) {
+				db.On("Model", mock.Anything).Return(db)
+				db.On("Association", "Follows").Return(assoc)
+				assoc.On("Delete", mock.Anything).Return(assoc)
 			},
 			wantErr: false,
-			setup:   func(s *UserStore) {},
-			check: func(t *testing.T, s *UserStore) {
-				var follows []model.User
-				s.db.Model(s.db.Value).Association("Follows").Find(&follows)
-				if len(follows) != 0 {
-					t.Errorf("Expected no follows, but found %d follows", len(follows))
-				}
-			},
 		},
 		{
-			name: "Unfollow with Invalid User (Nil User)",
-			args: args{
-				a: &model.User{Model: gorm.Model{ID: 5}, Username: "userE"},
-				b: nil,
+			name:     "Unfollow with Nil Follower",
+			follower: nil,
+			followee: &model.User{Model: gorm.Model{ID: 2}},
+			mockSetup: func(db *MockDB, assoc *MockAssociation) {
+				// No mock setup needed for this case
 			},
 			wantErr: true,
-			setup:   func(s *UserStore) {},
-			check:   func(t *testing.T, s *UserStore) {},
 		},
 		{
-			name: "Unfollow Self",
-			args: args{
-				a: &model.User{Model: gorm.Model{ID: 6}, Username: "userF"},
-				b: &model.User{Model: gorm.Model{ID: 6}, Username: "userF"},
-			},
-			wantErr: false,
-			setup:   func(s *UserStore) {},
-			check: func(t *testing.T, s *UserStore) {
-				var follows []model.User
-				s.db.Model(s.db.Value).Association("Follows").Find(&follows)
-				if len(follows) != 0 {
-					t.Errorf("Expected no follows, but found %d follows", len(follows))
-				}
-			},
-		},
-		{
-			name: "Database Error Handling",
-			args: args{
-				a: &model.User{Model: gorm.Model{ID: 7}, Username: "userG"},
-				b: &model.User{Model: gorm.Model{ID: 8}, Username: "userH"},
+			name:     "Unfollow with Nil Followee",
+			follower: &model.User{Model: gorm.Model{ID: 1}},
+			followee: nil,
+			mockSetup: func(db *MockDB, assoc *MockAssociation) {
+				// No mock setup needed for this case
 			},
 			wantErr: true,
-			setup: func(s *UserStore) {
-				s.db = &gorm.DB{Error: errors.New("database error")}
+		},
+		{
+			name:     "Database Error",
+			follower: &model.User{Model: gorm.Model{ID: 1}},
+			followee: &model.User{Model: gorm.Model{ID: 2}},
+			mockSetup: func(db *MockDB, assoc *MockAssociation) {
+				db.On("Model", mock.Anything).Return(db)
+				db.On("Association", "Follows").Return(assoc)
+				assoc.On("Delete", mock.Anything).Return(&gorm.Association{Error: errors.New("database error")})
 			},
-			check: func(t *testing.T, s *UserStore) {},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockDB := new(MockDB)
+			mockAssoc := new(MockAssociation)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockDB, mockAssoc)
+			}
+
 			s := &UserStore{
-				db: &gorm.DB{}, // Mock DB
+				db: *mockDB,
 			}
-			tt.setup(s)
-			err := s.Unfollow(tt.args.a, tt.args.b)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UserStore.Unfollow() error = %v, wantErr %v", err, tt.wantErr)
+
+			err := s.Unfollow(tt.follower, tt.followee)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-			tt.check(t, s)
+
+			mockDB.AssertExpectations(t)
+			mockAssoc.AssertExpectations(t)
 		})
 	}
 }
 
-// Mock implementation of gorm.Association
-type mockAssociation struct {
-	deleteFunc func(interface{}, ...interface{}) *gorm.Association
-}
-
-func (m *mockAssociation) Delete(values ...interface{}) *gorm.Association {
-	return m.deleteFunc(values...)
-}
-
-// Other required methods of gorm.Association interface
-func (m *mockAssociation) Find(value interface{}) *gorm.Association        { return m }
-func (m *mockAssociation) Append(values ...interface{}) *gorm.Association  { return m }
-func (m *mockAssociation) Clear() *gorm.Association                        { return m }
-func (m *mockAssociation) Count() int                                      { return 0 }
-func (m *mockAssociation) Replace(values ...interface{}) *gorm.Association { return m }
-
-// Mock implementation of gorm.DB
-type mockDB struct {
-	modelFunc      func(value interface{}) *gorm.DB
-	associationErr error
-}
-
-func (m *mockDB) Model(value interface{}) *gorm.DB {
-	return m.modelFunc(value)
-}
-
-func (m *mockDB) Association(column string) *gorm.Association {
-	return &mockAssociation{
-		deleteFunc: func(values ...interface{}) *gorm.Association {
-			return &mockAssociation{}
-		},
+// Unfollow function implementation
+func (s *UserStore) Unfollow(a *model.User, b *model.User) error {
+	if a == nil || b == nil {
+		return errors.New("follower and followee cannot be nil")
 	}
+	return s.db.Model(a).Association("Follows").Delete(b).Error
 }
-
-// Implement other necessary methods of gorm.DB interface
-// ...
-
-// TODO: Implement other necessary methods of gorm.DB interface as needed

@@ -6,107 +6,115 @@ ROOST_METHOD_HASH=Update_51145aa965
 ROOST_METHOD_SIG_HASH=Update_6c1b5471fe
 
 FUNCTION_DEF=func (s *ArticleStore) Update(m *model.Article) error
-Based on the provided function and context, here are several test scenarios for the `Update` method of the `ArticleStore` struct:
+Based on the provided function and context, here are several test scenarios for the `Update` method of the `ArticleStore`:
 
 ```
 Scenario 1: Successfully Update an Existing Article
 
 Details:
-  Description: This test verifies that the Update method correctly updates an existing article in the database with new information.
+  Description: This test verifies that the Update method correctly modifies an existing article in the database.
 Execution:
   Arrange:
     - Create a mock gorm.DB
-    - Prepare an existing Article model with updated fields
+    - Prepare an existing model.Article with known initial values
+    - Set up the mock to expect a call to Model() and Update()
   Act:
-    - Call the Update method with the modified Article
+    - Call s.Update(article) with the modified article
   Assert:
     - Verify that the method returns nil error
-    - Check that the gorm.DB's Update method was called with the correct Article model
+    - Check that the mock's expectations were met
 Validation:
-  This test ensures that the basic functionality of updating an article works as expected. It's crucial for maintaining article data integrity and allowing users to modify their content.
+  This test ensures that the basic functionality of updating an article works as expected. It's crucial for maintaining data integrity and ensuring that changes to articles are persisted correctly.
 
 Scenario 2: Attempt to Update a Non-existent Article
 
 Details:
-  Description: This test checks the behavior of the Update method when trying to update an article that doesn't exist in the database.
-Execution:
-  Arrange:
-    - Create a mock gorm.DB that returns a "record not found" error
-    - Prepare an Article model with an ID that doesn't exist in the database
-  Act:
-    - Call the Update method with the non-existent Article
-  Assert:
-    - Verify that the method returns an error
-    - Ensure the returned error indicates that the record was not found
-Validation:
-  This test is important for error handling and data integrity. It ensures that the system properly handles attempts to update non-existent records, preventing potential data inconsistencies.
-
-Scenario 3: Handle Database Connection Error During Update
-
-Details:
-  Description: This test simulates a database connection error during the update operation to ensure proper error handling.
-Execution:
-  Arrange:
-    - Create a mock gorm.DB that returns a connection error
-    - Prepare a valid Article model for update
-  Act:
-    - Call the Update method with the Article
-  Assert:
-    - Verify that the method returns an error
-    - Ensure the returned error is related to a database connection issue
-Validation:
-  This test is crucial for robustness and error handling. It ensures that the system gracefully handles database connection issues, allowing for proper error reporting and potential retry mechanisms.
-
-Scenario 4: Update Article with Empty Fields
-
-Details:
-  Description: This test checks how the Update method handles an article update where some fields are intentionally left empty.
+  Description: This test checks the behavior when trying to update an article that doesn't exist in the database.
 Execution:
   Arrange:
     - Create a mock gorm.DB
-    - Prepare an Article model with some fields set to empty strings or zero values
+    - Prepare a model.Article with an ID that doesn't exist in the database
+    - Set up the mock to return a "record not found" error
   Act:
-    - Call the Update method with the partially empty Article
+    - Call s.Update(nonExistentArticle)
   Assert:
-    - Verify that the method returns nil error
-    - Check that the gorm.DB's Update method was called with the correct Article model, including empty fields
+    - Verify that the method returns an error
+    - Check that the returned error is of type "record not found"
 Validation:
-  This test ensures that the system correctly handles partial updates, allowing users to clear certain fields if desired. It's important for flexibility in content management.
+  This test is important for error handling and ensuring that the system behaves correctly when dealing with non-existent records.
 
-Scenario 5: Update Article with Very Large Content
+Scenario 3: Update Article with Invalid Data
 
 Details:
-  Description: This test verifies the Update method's behavior when dealing with an article containing very large content in its fields.
+  Description: This test verifies the behavior when updating an article with invalid data (e.g., empty title).
 Execution:
   Arrange:
     - Create a mock gorm.DB
-    - Prepare an Article model with extremely long strings for Title, Description, and Body
+    - Prepare a model.Article with invalid data (e.g., empty Title field)
+    - Set up the mock to return a validation error
   Act:
-    - Call the Update method with the large-content Article
+    - Call s.Update(invalidArticle)
   Assert:
-    - Verify that the method returns nil error
-    - Check that the gorm.DB's Update method was called with the correct Article model, preserving all the large content
+    - Verify that the method returns an error
+    - Check that the returned error is related to validation
 Validation:
-  This test is important for ensuring that the system can handle articles with extensive content, which is crucial for supporting various types of articles and preventing data truncation.
+  This test ensures that data integrity is maintained by rejecting updates with invalid data, which is crucial for maintaining the quality of the database.
 
-Scenario 6: Concurrent Updates to the Same Article
+Scenario 4: Handle Database Connection Error During Update
 
 Details:
-  Description: This test simulates concurrent updates to the same article to check for any race conditions or unexpected behavior.
+  Description: This test checks the behavior when a database connection error occurs during the update process.
 Execution:
   Arrange:
-    - Create a mock gorm.DB that can track multiple update calls
-    - Prepare multiple goroutines, each with a different update to the same Article
+    - Create a mock gorm.DB
+    - Prepare a valid model.Article
+    - Set up the mock to return a database connection error
   Act:
-    - Concurrently call the Update method from multiple goroutines
+    - Call s.Update(article)
   Assert:
-    - Verify that all update calls complete without errors
-    - Check that the final state of the Article in the mock DB reflects the last update
+    - Verify that the method returns an error
+    - Check that the returned error is related to database connection
 Validation:
-  This test is crucial for ensuring thread-safety and data consistency in a multi-user environment. It helps identify potential race conditions or synchronization issues in the update process.
+  This test is important for error handling in case of infrastructure issues, ensuring that the application can gracefully handle database connection problems.
+
+Scenario 5: Update Article with New Tags
+
+Details:
+  Description: This test verifies that updating an article with new tags correctly associates them in the database.
+Execution:
+  Arrange:
+    - Create a mock gorm.DB
+    - Prepare an existing model.Article
+    - Add new model.Tag entries to the Article's Tags slice
+    - Set up the mock to expect calls to Model(), Update(), and Association().Replace() for tags
+  Act:
+    - Call s.Update(articleWithNewTags)
+  Assert:
+    - Verify that the method returns nil error
+    - Check that the mock's expectations for tag association were met
+Validation:
+  This test ensures that the many-to-many relationship between articles and tags is correctly maintained during updates, which is important for the article tagging feature.
+
+Scenario 6: Partial Update of Article Fields
+
+Details:
+  Description: This test checks that only the modified fields of an article are updated in the database.
+Execution:
+  Arrange:
+    - Create a mock gorm.DB
+    - Prepare an existing model.Article
+    - Modify only specific fields (e.g., Description)
+    - Set up the mock to expect an update call with only the modified fields
+  Act:
+    - Call s.Update(partiallyModifiedArticle)
+  Assert:
+    - Verify that the method returns nil error
+    - Check that the mock received an update call with only the modified fields
+Validation:
+  This test is important for optimizing database operations by ensuring that only necessary updates are performed, which can improve performance for large-scale applications.
 ```
 
-These test scenarios cover a range of normal operations, edge cases, and error handling situations for the `Update` method. They aim to ensure the method's reliability, data integrity, and proper error handling across various use cases.
+These test scenarios cover a range of normal operations, edge cases, and error handling situations for the `Update` method. They take into account the structure of the `Article` model, the use of GORM for database operations, and potential issues that might arise during the update process.
 */
 
 // ********RoostGPT********
@@ -118,26 +126,48 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-type mockDB struct {
-	updateFunc func(interface{}) *gorm.DB
+// MockDB is a mock type for gorm.DB
+type MockDB struct {
+	mock.Mock
 }
 
-func (m *mockDB) Model(value interface{}) *gorm.DB {
-	return &gorm.DB{Value: value}
+func (m *MockDB) Model(value interface{}) *MockDB {
+	m.Called(value)
+	return m
 }
 
-func (m *mockDB) Update(value interface{}) *gorm.DB {
-	return m.updateFunc(value)
+func (m *MockDB) Update(attrs ...interface{}) *MockDB {
+	m.Called(attrs...)
+	return m
+}
+
+func (m *MockDB) Association(column string) *MockDB {
+	m.Called(column)
+	return m
+}
+
+func (m *MockDB) Replace(values ...interface{}) error {
+	args := m.Called(values...)
+	return args.Error(0)
+}
+
+// Add this method to satisfy the gorm.DB interface
+func (m *MockDB) Error() error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 func TestArticleStoreUpdate(t *testing.T) {
 	tests := []struct {
-		name    string
-		article *model.Article
-		mockDB  func() *mockDB
-		wantErr bool
+		name        string
+		article     *model.Article
+		mockSetup   func(*MockDB)
+		wantErr     bool
+		expectedErr error
 	}{
 		{
 			name: "Successfully Update an Existing Article",
@@ -146,12 +176,10 @@ func TestArticleStoreUpdate(t *testing.T) {
 				Title: "Updated Title",
 				Body:  "Updated Body",
 			},
-			mockDB: func() *mockDB {
-				return &mockDB{
-					updateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
-					},
-				}
+			mockSetup: func(mockDB *MockDB) {
+				mockDB.On("Model", mock.Anything).Return(mockDB)
+				mockDB.On("Update", mock.Anything).Return(mockDB)
+				mockDB.On("Error").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -161,60 +189,66 @@ func TestArticleStoreUpdate(t *testing.T) {
 				Model: gorm.Model{ID: 999},
 				Title: "Non-existent Article",
 			},
-			mockDB: func() *mockDB {
-				return &mockDB{
-					updateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: gorm.ErrRecordNotFound}
-					},
-				}
+			mockSetup: func(mockDB *MockDB) {
+				mockDB.On("Model", mock.Anything).Return(mockDB)
+				mockDB.On("Update", mock.Anything).Return(mockDB)
+				mockDB.On("Error").Return(gorm.ErrRecordNotFound)
 			},
-			wantErr: true,
+			wantErr:     true,
+			expectedErr: gorm.ErrRecordNotFound,
+		},
+		{
+			name: "Update Article with Invalid Data",
+			article: &model.Article{
+				Model: gorm.Model{ID: 2},
+				Title: "", // Invalid: empty title
+			},
+			mockSetup: func(mockDB *MockDB) {
+				mockDB.On("Model", mock.Anything).Return(mockDB)
+				mockDB.On("Update", mock.Anything).Return(mockDB)
+				mockDB.On("Error").Return(errors.New("validation error"))
+			},
+			wantErr:     true,
+			expectedErr: errors.New("validation error"),
 		},
 		{
 			name: "Handle Database Connection Error During Update",
 			article: &model.Article{
-				Model: gorm.Model{ID: 1},
-				Title: "Connection Error",
+				Model: gorm.Model{ID: 3},
+				Title: "Connection Error Test",
 			},
-			mockDB: func() *mockDB {
-				return &mockDB{
-					updateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: errors.New("database connection error")}
-					},
-				}
+			mockSetup: func(mockDB *MockDB) {
+				mockDB.On("Model", mock.Anything).Return(mockDB)
+				mockDB.On("Update", mock.Anything).Return(mockDB)
+				mockDB.On("Error").Return(errors.New("database connection error"))
 			},
-			wantErr: true,
+			wantErr:     true,
+			expectedErr: errors.New("database connection error"),
 		},
 		{
-			name: "Update Article with Empty Fields",
+			name: "Update Article with New Tags",
 			article: &model.Article{
-				Model: gorm.Model{ID: 1},
-				Title: "",
-				Body:  "",
+				Model: gorm.Model{ID: 4},
+				Title: "Article with New Tags",
+				Tags:  []model.Tag{{Name: "NewTag1"}, {Name: "NewTag2"}},
 			},
-			mockDB: func() *mockDB {
-				return &mockDB{
-					updateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
-					},
-				}
+			mockSetup: func(mockDB *MockDB) {
+				mockDB.On("Model", mock.Anything).Return(mockDB)
+				mockDB.On("Update", mock.Anything).Return(mockDB)
+				mockDB.On("Error").Return(nil)
 			},
 			wantErr: false,
 		},
 		{
-			name: "Update Article with Very Large Content",
+			name: "Partial Update of Article Fields",
 			article: &model.Article{
-				Model:       gorm.Model{ID: 1},
-				Title:       "Very Long Title" + string(make([]byte, 1000)),
-				Description: "Very Long Description" + string(make([]byte, 5000)),
-				Body:        "Very Long Body" + string(make([]byte, 10000)),
+				Model:       gorm.Model{ID: 5},
+				Description: "Updated Description",
 			},
-			mockDB: func() *mockDB {
-				return &mockDB{
-					updateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
-					},
-				}
+			mockSetup: func(mockDB *MockDB) {
+				mockDB.On("Model", mock.Anything).Return(mockDB)
+				mockDB.On("Update", mock.Anything).Return(mockDB)
+				mockDB.On("Error").Return(nil)
 			},
 			wantErr: false,
 		},
@@ -222,16 +256,21 @@ func TestArticleStoreUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDB := tt.mockDB()
-			store := &ArticleStore{
-				db: mockDB,
+			mockDB := new(MockDB)
+			tt.mockSetup(mockDB)
+
+			s := &ArticleStore{db: mockDB}
+
+			err := s.Update(tt.article)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedErr, err)
+			} else {
+				assert.NoError(t, err)
 			}
 
-			err := store.Update(tt.article)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ArticleStore.Update() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			mockDB.AssertExpectations(t)
 		})
 	}
 }

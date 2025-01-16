@@ -6,88 +6,88 @@ ROOST_METHOD_HASH=GetByEmail_3574af40e5
 ROOST_METHOD_SIG_HASH=GetByEmail_5731b833c1
 
 FUNCTION_DEF=func (s *UserStore) GetByEmail(email string) (*model.User, error)
-Here are test scenarios for the `GetByEmail` function in the `UserStore` struct:
+Here are several test scenarios for the `GetByEmail` function:
 
 ```
 Scenario 1: Successfully retrieve a user by email
 
 Details:
-  Description: This test verifies that the function can successfully retrieve a user from the database when given a valid email address.
+  Description: This test verifies that the function can correctly retrieve a user from the database when given a valid email address.
 Execution:
-  Arrange: Set up a mock database with a known user record.
+  Arrange: Set up a mock database with a known user entry.
   Act: Call GetByEmail with the email of the known user.
   Assert: Verify that the returned user matches the expected user data and that no error is returned.
 Validation:
-  This test ensures the basic functionality of the method works as expected. It's crucial for user authentication and profile retrieval features in the application.
+  This test ensures the basic functionality of the method works as expected. It's crucial for validating that user lookups, which are likely a common operation, function correctly.
 
 Scenario 2: Attempt to retrieve a non-existent user
 
 Details:
-  Description: This test checks the behavior of the function when querying for an email that doesn't exist in the database.
+  Description: This test checks the function's behavior when querying for an email that doesn't exist in the database.
 Execution:
-  Arrange: Set up a mock database with no matching email.
+  Arrange: Set up a mock database without any users or with known users that don't match the test email.
   Act: Call GetByEmail with an email that doesn't exist in the database.
-  Assert: Verify that the function returns a nil user and a gorm.ErrRecordNotFound error.
+  Assert: Verify that the function returns a nil user and a non-nil error (likely gorm.ErrRecordNotFound).
 Validation:
-  This test is important for error handling and ensuring the application behaves correctly when dealing with non-existent users.
+  This test is important for error handling and ensuring the function behaves correctly when no matching user is found.
 
 Scenario 3: Handle database connection error
 
 Details:
-  Description: This test simulates a database connection error to ensure the function handles it gracefully.
+  Description: This test simulates a database connection failure to ensure the function handles such errors gracefully.
 Execution:
-  Arrange: Set up a mock database that returns a connection error.
+  Arrange: Set up a mock database that returns a connection error when queried.
   Act: Call GetByEmail with any email address.
-  Assert: Verify that the function returns a nil user and the specific database error.
+  Assert: Verify that the function returns a nil user and a non-nil error that reflects the database connection issue.
 Validation:
-  This test is crucial for error handling and ensuring the application can gracefully handle database issues.
+  This test is crucial for error handling in production environments where database issues may occur.
 
-Scenario 4: Retrieve user with empty email string
+Scenario 4: Retrieve user with maximum length email
 
 Details:
-  Description: This test checks the behavior of the function when provided with an empty email string.
+  Description: This test checks if the function can handle an email address at the maximum allowed length.
 Execution:
-  Arrange: Set up a mock database.
-  Act: Call GetByEmail with an empty string.
-  Assert: Verify that the function returns a nil user and an appropriate error (likely gorm.ErrRecordNotFound).
+  Arrange: Set up a mock database with a user having an email address at the maximum allowed length (e.g., 254 characters for RFC 5321).
+  Act: Call GetByEmail with this maximum length email.
+  Assert: Verify that the correct user is returned without errors.
 Validation:
-  This test ensures the function handles edge cases properly and doesn't return unexpected results for invalid input.
+  This test ensures the function can handle edge cases related to input size limitations.
 
-Scenario 5: Retrieve user with very long email address
+Scenario 5: Attempt retrieval with an empty email string
 
 Details:
-  Description: This test verifies that the function can handle extremely long email addresses without truncation or errors.
+  Description: This test verifies the function's behavior when provided with an empty email string.
 Execution:
-  Arrange: Set up a mock database with a user having a very long email address (e.g., 255 characters).
-  Act: Call GetByEmail with the long email address.
-  Assert: Verify that the returned user matches the expected user data and no error is returned.
+  Arrange: Set up a mock database (content doesn't matter for this test).
+  Act: Call GetByEmail with an empty string ("").
+  Assert: Verify that the function returns a nil user and an appropriate error.
 Validation:
-  This test ensures the function can handle edge cases with unusually long but valid email addresses, which is important for data integrity and security.
+  This test is important for input validation and ensuring the function doesn't process invalid inputs.
 
-Scenario 6: Case sensitivity in email lookup
+Scenario 6: Handle case sensitivity in email lookup
 
 Details:
-  Description: This test checks whether the email lookup is case-sensitive or case-insensitive.
+  Description: This test checks if the email lookup is case-insensitive, as email addresses are typically treated as such.
 Execution:
   Arrange: Set up a mock database with a user having a mixed-case email address.
   Act: Call GetByEmail with the same email address but in a different case.
-  Assert: Verify whether the function returns the user (case-insensitive) or returns an error (case-sensitive).
+  Assert: Verify that the correct user is returned, regardless of the case used in the input.
 Validation:
-  This test is important for understanding the behavior of the email lookup and ensuring consistency in user retrieval across the application.
+  This test ensures that the function adheres to email address standards and provides a user-friendly lookup mechanism.
 
-Scenario 7: Concurrent access to GetByEmail
+Scenario 7: Performance test with a large database
 
 Details:
-  Description: This test verifies that the function can handle multiple concurrent calls without race conditions or data inconsistencies.
+  Description: This test evaluates the function's performance when querying a large dataset.
 Execution:
-  Arrange: Set up a mock database with multiple user records.
-  Act: Call GetByEmail concurrently with different email addresses using goroutines.
-  Assert: Verify that all calls return the correct user data without errors or data races.
+  Arrange: Set up a mock database with a large number of user entries (e.g., 100,000+).
+  Act: Call GetByEmail with an email that exists in the database.
+  Assert: Verify that the correct user is returned within an acceptable time frame.
 Validation:
-  This test ensures the function is thread-safe and can be used in a concurrent environment, which is crucial for scalability and reliability in a production application.
+  While not a functional test, this scenario is important for ensuring the method performs well under load, which is crucial for production environments.
 ```
 
-These test scenarios cover a range of normal operations, edge cases, and error handling situations for the `GetByEmail` function. They take into account the provided package structure, imports, and struct definitions to create relevant and comprehensive test cases.
+These scenarios cover a range of normal operations, edge cases, and error handling situations for the `GetByEmail` function. They take into account the function's signature, the `UserStore` struct it belongs to, and the `model.User` type it returns. The scenarios also consider potential database interactions and error conditions that might occur in a real-world application.
 */
 
 // ********RoostGPT********
@@ -95,189 +95,166 @@ package store
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
+	"github.com/stretchr/testify/assert"
 )
 
+// Mock DB struct
 type mockDB struct {
-	users  map[string]*model.User
-	err    error
-	mu     sync.Mutex
-	called int
+	users  []model.User
+	dbErr  error
+	dbFunc func(string) (*model.User, error)
 }
 
-func (m *mockDB) Where(query interface{}, args ...interface{}) *gorm.DB {
-	return &gorm.DB{Value: m}
+func (m *mockDB) Where(query interface{}, args ...interface{}) *mockDB {
+	return m
 }
 
 func (m *mockDB) First(out interface{}, where ...interface{}) *gorm.DB {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.called++
-	if m.err != nil {
-		return &gorm.DB{Error: m.err}
+	if m.dbErr != nil {
+		return &gorm.DB{Error: m.dbErr}
 	}
-	email := where[0].(string)
-	if user, ok := m.users[email]; ok {
-		reflect.ValueOf(out).Elem().Set(reflect.ValueOf(*user))
+	if m.dbFunc != nil {
+		user, err := m.dbFunc(where[0].(string))
+		if err != nil {
+			return &gorm.DB{Error: err}
+		}
+		*(out.(*model.User)) = *user
 		return &gorm.DB{}
+	}
+	for _, u := range m.users {
+		if u.Email == where[0] {
+			*(out.(*model.User)) = u
+			return &gorm.DB{}
+		}
 	}
 	return &gorm.DB{Error: gorm.ErrRecordNotFound}
 }
 
-// Mock implementation of gorm.DB
-type mockGormDB struct {
-	*mockDB
-}
-
-func (m *mockGormDB) Where(query interface{}, args ...interface{}) *gorm.DB {
-	return m.mockDB.Where(query, args...)
-}
-
-func (m *mockGormDB) First(out interface{}, where ...interface{}) *gorm.DB {
-	return m.mockDB.First(out, where...)
+// Helper function to repeat a string
+func repeatString(s string, count int) string {
+	result := ""
+	for i := 0; i < count; i++ {
+		result += s
+	}
+	return result
 }
 
 func TestUserStoreGetByEmail(t *testing.T) {
 	tests := []struct {
-		name    string
-		email   string
-		mockDB  *mockDB
-		want    *model.User
-		wantErr error
+		name     string
+		email    string
+		mockDB   mockDB
+		expected *model.User
+		wantErr  bool
+		errMsg   string
 	}{
 		{
 			name:  "Successfully retrieve a user by email",
 			email: "user@example.com",
-			mockDB: &mockDB{
-				users: map[string]*model.User{
-					"user@example.com": {
-						Model:    gorm.Model{ID: 1},
-						Username: "testuser",
-						Email:    "user@example.com",
-					},
+			mockDB: mockDB{
+				users: []model.User{
+					{Model: gorm.Model{ID: 1}, Email: "user@example.com", Username: "testuser"},
 				},
 			},
-			want: &model.User{
-				Model:    gorm.Model{ID: 1},
-				Username: "testuser",
-				Email:    "user@example.com",
+			expected: &model.User{Model: gorm.Model{ID: 1}, Email: "user@example.com", Username: "testuser"},
+			wantErr:  false,
+		},
+		{
+			name:     "Attempt to retrieve a non-existent user",
+			email:    "nonexistent@example.com",
+			mockDB:   mockDB{},
+			expected: nil,
+			wantErr:  true,
+			errMsg:   "record not found",
+		},
+		{
+			name:  "Handle database connection error",
+			email: "user@example.com",
+			mockDB: mockDB{
+				dbErr: errors.New("database connection error"),
 			},
-			wantErr: nil,
+			expected: nil,
+			wantErr:  true,
+			errMsg:   "database connection error",
 		},
 		{
-			name:    "Attempt to retrieve a non-existent user",
-			email:   "nonexistent@example.com",
-			mockDB:  &mockDB{users: map[string]*model.User{}},
-			want:    nil,
-			wantErr: gorm.ErrRecordNotFound,
-		},
-		{
-			name:    "Handle database connection error",
-			email:   "user@example.com",
-			mockDB:  &mockDB{err: errors.New("database connection error")},
-			want:    nil,
-			wantErr: errors.New("database connection error"),
-		},
-		{
-			name:    "Retrieve user with empty email string",
-			email:   "",
-			mockDB:  &mockDB{users: map[string]*model.User{}},
-			want:    nil,
-			wantErr: gorm.ErrRecordNotFound,
-		},
-		{
-			name:  "Retrieve user with very long email address",
-			email: "very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.example.com",
-			mockDB: &mockDB{
-				users: map[string]*model.User{
-					"very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.example.com": {
-						Model:    gorm.Model{ID: 2},
-						Username: "longemailtestuser",
-						Email:    "very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.example.com",
-					},
+			name:  "Retrieve user with maximum length email",
+			email: repeatString("a", 242) + "@example.com", // 254 characters
+			mockDB: mockDB{
+				users: []model.User{
+					{Model: gorm.Model{ID: 1}, Email: repeatString("a", 242) + "@example.com", Username: "maxuser"},
 				},
 			},
-			want: &model.User{
-				Model:    gorm.Model{ID: 2},
-				Username: "longemailtestuser",
-				Email:    "very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.very.long.email.address.that.is.exactly.two.hundred.and.fifty.five.characters.long.example.com",
-			},
-			wantErr: nil,
+			expected: &model.User{Model: gorm.Model{ID: 1}, Email: repeatString("a", 242) + "@example.com", Username: "maxuser"},
+			wantErr:  false,
 		},
 		{
-			name:  "Case sensitivity in email lookup",
+			name:     "Attempt retrieval with an empty email string",
+			email:    "",
+			mockDB:   mockDB{},
+			expected: nil,
+			wantErr:  true,
+			errMsg:   "record not found",
+		},
+		{
+			name:  "Handle case sensitivity in email lookup",
 			email: "User@Example.com",
-			mockDB: &mockDB{
-				users: map[string]*model.User{
-					"user@example.com": {
-						Model:    gorm.Model{ID: 3},
-						Username: "casesensitiveuser",
-						Email:    "user@example.com",
-					},
+			mockDB: mockDB{
+				dbFunc: func(email string) (*model.User, error) {
+					if email == "User@Example.com" {
+						return &model.User{Model: gorm.Model{ID: 1}, Email: "user@example.com", Username: "caseuser"}, nil
+					}
+					return nil, gorm.ErrRecordNotFound
 				},
 			},
-			want:    nil,
-			wantErr: gorm.ErrRecordNotFound,
+			expected: &model.User{Model: gorm.Model{ID: 1}, Email: "user@example.com", Username: "caseuser"},
+			wantErr:  false,
+		},
+		{
+			name:  "Performance test with a large database",
+			email: "user99999@example.com",
+			mockDB: mockDB{
+				dbFunc: func(email string) (*model.User, error) {
+					// Simulate delay for large database
+					time.Sleep(100 * time.Millisecond)
+					return &model.User{Model: gorm.Model{ID: 99999}, Email: email, Username: "user99999"}, nil
+				},
+			},
+			expected: &model.User{Model: gorm.Model{ID: 99999}, Email: "user99999@example.com", Username: "user99999"},
+			wantErr:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &UserStore{
-				db: &mockGormDB{mockDB: tt.mockDB},
+			store := &UserStore{
+				db: &tt.mockDB,
 			}
-			got, err := s.GetByEmail(tt.email)
-			if (err != nil) != (tt.wantErr != nil) {
-				t.Errorf("UserStore.GetByEmail() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+			got, err := store.GetByEmail(tt.email)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, got)
 			}
-			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				t.Errorf("UserStore.GetByEmail() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UserStore.GetByEmail() = %v, want %v", got, tt.want)
+
+			if tt.name == "Performance test with a large database" {
+				start := time.Now()
+				_, _ = store.GetByEmail(tt.email)
+				duration := time.Since(start)
+				assert.Less(t, duration, 200*time.Millisecond, "Query took too long")
 			}
 		})
-	}
-}
-
-func TestUserStoreGetByEmailConcurrent(t *testing.T) {
-	mockDB := &mockDB{
-		users: map[string]*model.User{
-			"user1@example.com": {Model: gorm.Model{ID: 1}, Username: "user1", Email: "user1@example.com"},
-			"user2@example.com": {Model: gorm.Model{ID: 2}, Username: "user2", Email: "user2@example.com"},
-			"user3@example.com": {Model: gorm.Model{ID: 3}, Username: "user3", Email: "user3@example.com"},
-		},
-	}
-
-	s := &UserStore{db: &mockGormDB{mockDB: mockDB}}
-
-	var wg sync.WaitGroup
-	for i := 0; i < 3; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			email := fmt.Sprintf("user%d@example.com", i+1)
-			user, err := s.GetByEmail(email)
-			if err != nil {
-				t.Errorf("Concurrent UserStore.GetByEmail() error = %v", err)
-				return
-			}
-			if user.Email != email {
-				t.Errorf("Concurrent UserStore.GetByEmail() got email = %v, want %v", user.Email, email)
-			}
-		}(i)
-	}
-	wg.Wait()
-
-	if mockDB.called != 3 {
-		t.Errorf("Expected 3 calls to the database, got %d", mockDB.called)
 	}
 }

@@ -6,23 +6,22 @@ ROOST_METHOD_HASH=Create_0a911e138d
 ROOST_METHOD_SIG_HASH=Create_723c594377
 
 FUNCTION_DEF=func (s *ArticleStore) Create(m *model.Article) error
-Here are several test scenarios for the `Create` function in the `ArticleStore` struct:
+Here are several test scenarios for the Create function in the ArticleStore struct:
 
 ```
 Scenario 1: Successfully Create a New Article
 
 Details:
-  Description: This test verifies that the Create function can successfully add a new article to the database without any errors.
+  Description: This test verifies that the Create function can successfully add a new article to the database.
 Execution:
   Arrange:
-    - Initialize a mock gorm.DB
-    - Create a new ArticleStore with the mock DB
-    - Prepare a valid model.Article instance
+    - Create a mock gorm.DB that expects a Create call and returns no error.
+    - Prepare a valid model.Article struct with all required fields filled.
   Act:
-    - Call the Create function with the prepared article
+    - Call the Create function with the prepared article.
   Assert:
-    - Verify that the function returns nil (no error)
-    - Check that the mock DB's Create method was called with the correct article
+    - Verify that the function returns nil (no error).
+    - Check that the mock database's Create method was called with the correct article.
 Validation:
   This test ensures the basic functionality of creating an article works as expected. It's crucial for the core operation of the application's article management system.
 
@@ -32,87 +31,82 @@ Details:
   Description: This test checks the behavior when trying to create an article with missing required fields (e.g., empty Title).
 Execution:
   Arrange:
-    - Initialize a mock gorm.DB
-    - Create a new ArticleStore with the mock DB
-    - Prepare an invalid model.Article instance with an empty Title
+    - Create a mock gorm.DB that returns an error when Create is called.
+    - Prepare an invalid model.Article struct with an empty Title field.
   Act:
-    - Call the Create function with the invalid article
+    - Call the Create function with the invalid article.
   Assert:
-    - Verify that the function returns an error
-    - Check that the error message indicates the missing required field
+    - Verify that the function returns an error.
+    - Check that the returned error matches the expected validation error.
 Validation:
-  This test ensures that the application properly handles data validation, preventing incomplete or invalid articles from being stored in the database.
+  This test ensures that the application properly handles invalid input and maintains data integrity by rejecting articles with missing required information.
 
-Scenario 3: Create an Article with Associated Tags
+Scenario 3: Handle Database Connection Error
 
 Details:
-  Description: This test verifies that an article can be created with associated tags, ensuring the many-to-many relationship is handled correctly.
+  Description: This test simulates a database connection error during article creation.
 Execution:
   Arrange:
-    - Initialize a mock gorm.DB
-    - Create a new ArticleStore with the mock DB
-    - Prepare a valid model.Article instance with an array of Tags
+    - Create a mock gorm.DB that returns a connection error when Create is called.
+    - Prepare a valid model.Article struct.
   Act:
-    - Call the Create function with the prepared article
+    - Call the Create function with the valid article.
   Assert:
-    - Verify that the function returns nil (no error)
-    - Check that the mock DB's Create method was called with the correct article and associated tags
+    - Verify that the function returns an error.
+    - Check that the returned error is a database connection error.
 Validation:
-  This test ensures that the complex relationships between articles and tags are properly handled during creation, which is important for the article tagging feature.
+  This test ensures that the application gracefully handles database connection issues, which is crucial for maintaining system reliability and providing appropriate feedback to users.
 
-Scenario 4: Handle Database Connection Error
+Scenario 4: Create Article with Associated Tags
 
 Details:
-  Description: This test checks the behavior when there's a database connection error during article creation.
+  Description: This test verifies that an article can be created with associated tags.
 Execution:
   Arrange:
-    - Initialize a mock gorm.DB that returns a connection error
-    - Create a new ArticleStore with the mock DB
-    - Prepare a valid model.Article instance
+    - Create a mock gorm.DB that expects a Create call with associated tags and returns no error.
+    - Prepare a valid model.Article struct with a non-empty Tags slice.
   Act:
-    - Call the Create function with the prepared article
+    - Call the Create function with the article containing tags.
   Assert:
-    - Verify that the function returns an error
-    - Check that the returned error matches the expected database connection error
+    - Verify that the function returns nil (no error).
+    - Check that the mock database's Create method was called with the correct article and associated tags.
 Validation:
-  This test ensures that the application gracefully handles database connection issues, which is crucial for error reporting and system stability.
+  This test ensures that the application correctly handles the creation of articles with related entities (tags), which is important for maintaining proper relationships in the database.
 
-Scenario 5: Create an Article with Maximum Length Content
-
-Details:
-  Description: This test verifies that an article with maximum allowed length for Title, Description, and Body can be created successfully.
-Execution:
-  Arrange:
-    - Initialize a mock gorm.DB
-    - Create a new ArticleStore with the mock DB
-    - Prepare a valid model.Article instance with maximum length strings for Title, Description, and Body
-  Act:
-    - Call the Create function with the prepared article
-  Assert:
-    - Verify that the function returns nil (no error)
-    - Check that the mock DB's Create method was called with the correct article
-Validation:
-  This test ensures that the system can handle articles with maximum allowed content length, which is important for preventing data truncation and ensuring all user content is stored correctly.
-
-Scenario 6: Attempt to Create a Duplicate Article
+Scenario 5: Create Article with Duplicate Title
 
 Details:
   Description: This test checks the behavior when trying to create an article with a title that already exists in the database.
 Execution:
   Arrange:
-    - Initialize a mock gorm.DB that returns a unique constraint violation error
-    - Create a new ArticleStore with the mock DB
-    - Prepare a valid model.Article instance with a title that simulates a duplicate
+    - Create a mock gorm.DB that returns a unique constraint violation error when Create is called.
+    - Prepare a valid model.Article struct with a title known to exist in the database.
   Act:
-    - Call the Create function with the prepared article
+    - Call the Create function with the article.
   Assert:
-    - Verify that the function returns an error
-    - Check that the returned error indicates a unique constraint violation
+    - Verify that the function returns an error.
+    - Check that the returned error indicates a unique constraint violation.
 Validation:
-  This test ensures that the application properly handles attempts to create duplicate articles, maintaining data integrity and preventing unintended overwrites.
+  This test ensures that the application properly handles duplicate entries and maintains data integrity by rejecting articles with non-unique titles (assuming title uniqueness is a requirement).
+
+Scenario 6: Create Article with Maximum Length Content
+
+Details:
+  Description: This test verifies that an article can be created with content at the maximum allowed length.
+Execution:
+  Arrange:
+    - Create a mock gorm.DB that expects a Create call and returns no error.
+    - Prepare a valid model.Article struct with Title, Description, and Body fields at their maximum allowed lengths.
+  Act:
+    - Call the Create function with the article.
+  Assert:
+    - Verify that the function returns nil (no error).
+    - Check that the mock database's Create method was called with the correct article.
+Validation:
+  This test ensures that the application can handle articles with maximum-length content, which is important for verifying that the system works correctly with edge cases in terms of data size.
 ```
 
-These test scenarios cover various aspects of the `Create` function, including normal operation, error handling, and edge cases. They take into account the provided struct definitions and the context of the article creation process in the application.
+These test scenarios cover a range of normal operations, edge cases, and error handling situations for the Create function. They take into account the provided struct definitions and the context of the ArticleStore and its dependency on gorm.DB.
 */
 
 // ********RoostGPT********
@@ -120,26 +114,26 @@ package store
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
 )
 
-// MockDB is a mock implementation of *gorm.DB
-type MockDB struct {
-	CreateFunc func(interface{}) *gorm.DB
+type mockDB struct {
+	createFunc func(interface{}) *gorm.DB
 }
 
-func (m *MockDB) Create(value interface{}) *gorm.DB {
-	return m.CreateFunc(value)
+func (m *mockDB) Create(value interface{}) *gorm.DB {
+	return m.createFunc(value)
 }
 
 func TestArticleStoreCreate(t *testing.T) {
 	tests := []struct {
 		name    string
 		article *model.Article
-		mockDB  func() *MockDB
+		mockDB  func(article *model.Article) *mockDB
 		wantErr bool
 	}{
 		{
@@ -148,11 +142,10 @@ func TestArticleStoreCreate(t *testing.T) {
 				Title:       "Test Article",
 				Description: "Test Description",
 				Body:        "Test Body",
-				UserID:      1,
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
+			mockDB: func(article *model.Article) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) *gorm.DB {
 						return &gorm.DB{Error: nil}
 					},
 				}
@@ -162,39 +155,16 @@ func TestArticleStoreCreate(t *testing.T) {
 		{
 			name: "Attempt to Create an Article with Missing Required Fields",
 			article: &model.Article{
-				Description: "Test Description",
-				Body:        "Test Body",
-				UserID:      1,
+				Title: "", // Empty title
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: errors.New("title is required")}
+			mockDB: func(article *model.Article) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) *gorm.DB {
+						return &gorm.DB{Error: errors.New("validation error")}
 					},
 				}
 			},
 			wantErr: true,
-		},
-		{
-			name: "Create an Article with Associated Tags",
-			article: &model.Article{
-				Title:       "Test Article with Tags",
-				Description: "Test Description",
-				Body:        "Test Body",
-				UserID:      1,
-				Tags: []model.Tag{
-					{Model: gorm.Model{ID: 1}, Name: "Tag1"},
-					{Model: gorm.Model{ID: 2}, Name: "Tag2"},
-				},
-			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: nil}
-					},
-				}
-			},
-			wantErr: false,
 		},
 		{
 			name: "Handle Database Connection Error",
@@ -202,11 +172,10 @@ func TestArticleStoreCreate(t *testing.T) {
 				Title:       "Test Article",
 				Description: "Test Description",
 				Body:        "Test Body",
-				UserID:      1,
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
+			mockDB: func(article *model.Article) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) *gorm.DB {
 						return &gorm.DB{Error: errors.New("database connection error")}
 					},
 				}
@@ -214,16 +183,16 @@ func TestArticleStoreCreate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Create an Article with Maximum Length Content",
+			name: "Create Article with Associated Tags",
 			article: &model.Article{
-				Title:       string(make([]byte, 255)),   // Max length title
-				Description: string(make([]byte, 1000)),  // Max length description
-				Body:        string(make([]byte, 10000)), // Max length body
-				UserID:      1,
+				Title:       "Test Article with Tags",
+				Description: "Test Description",
+				Body:        "Test Body",
+				Tags:        []model.Tag{{Name: "tag1"}, {Name: "tag2"}},
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
+			mockDB: func(article *model.Article) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) *gorm.DB {
 						return &gorm.DB{Error: nil}
 					},
 				}
@@ -231,38 +200,49 @@ func TestArticleStoreCreate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Attempt to Create a Duplicate Article",
+			name: "Create Article with Duplicate Title",
 			article: &model.Article{
-				Title:       "Duplicate Article",
+				Title:       "Duplicate Title",
 				Description: "Test Description",
 				Body:        "Test Body",
-				UserID:      1,
 			},
-			mockDB: func() *MockDB {
-				return &MockDB{
-					CreateFunc: func(value interface{}) *gorm.DB {
-						return &gorm.DB{Error: errors.New("duplicate entry")}
+			mockDB: func(article *model.Article) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) *gorm.DB {
+						return &gorm.DB{Error: errors.New("unique constraint violation")}
 					},
 				}
 			},
 			wantErr: true,
 		},
+		{
+			name: "Create Article with Maximum Length Content",
+			article: &model.Article{
+				Title:       strings.Repeat("A", 255),   // Assuming 255 is the max length
+				Description: strings.Repeat("B", 1000),  // Assuming 1000 is the max length
+				Body:        strings.Repeat("C", 10000), // Assuming 10000 is the max length
+			},
+			mockDB: func(article *model.Article) *mockDB {
+				return &mockDB{
+					createFunc: func(value interface{}) *gorm.DB {
+						return &gorm.DB{Error: nil}
+					},
+				}
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDB := tt.mockDB()
-			s := &ArticleStore{
-				db: mockDB,
-			}
+			mockDB := tt.mockDB(tt.article)
+			s := &ArticleStore{db: mockDB}
 
 			err := s.Create(tt.article)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ArticleStore.Create() error = %v, wantErr %v", err, tt.wantErr)
 			}
-
-			// Additional assertions can be added here if needed
 		})
 	}
 }

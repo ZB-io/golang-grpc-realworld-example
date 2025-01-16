@@ -6,121 +6,115 @@ ROOST_METHOD_HASH=DeleteFavorite_a856bcbb70
 ROOST_METHOD_SIG_HASH=DeleteFavorite_f7e5c0626f
 
 FUNCTION_DEF=func (s *ArticleStore) DeleteFavorite(a *model.Article, u *model.User) error
-Based on the provided function and context, here are several test scenarios for the `DeleteFavorite` function:
+Here are several test scenarios for the `DeleteFavorite` function:
 
 ```
 Scenario 1: Successfully Delete a Favorite
 
 Details:
-  Description: Test the successful removal of a favorite from an article for a user, ensuring the favorite count decreases and the association is removed.
+  Description: This test verifies that the function can successfully remove a user's favorite from an article and decrease the favorites count.
 Execution:
   Arrange:
     - Create a test database connection
     - Set up an ArticleStore with the test database
-    - Create a test article with at least one favorited user
+    - Create a test article with at least one favorited user and a favorites count > 0
     - Create a test user who has favorited the article
   Act:
     - Call DeleteFavorite with the test article and test user
   Assert:
-    - Verify that the function returns nil error
+    - Verify that the function returns nil (no error)
     - Check that the article's FavoritesCount has decreased by 1
-    - Ensure the user is no longer in the article's FavoritedUsers association
+    - Ensure the user is no longer in the article's FavoritedUsers list
 Validation:
-  This test ensures the core functionality of unfavoriting an article works correctly, validating both the database operations and the in-memory model update.
+  This test is crucial to ensure the core functionality of unfavoriting an article works correctly. It validates both the database operations and the in-memory model update.
 
 Scenario 2: Attempt to Delete a Non-existent Favorite
 
 Details:
-  Description: Test the behavior when trying to remove a favorite for a user who hasn't favorited the article.
+  Description: This test checks the behavior when trying to remove a favorite for a user who hasn't favorited the article.
 Execution:
   Arrange:
-    - Create a test database connection
-    - Set up an ArticleStore with the test database
-    - Create a test article with no favorited users
-    - Create a test user who has not favorited the article
+    - Set up ArticleStore with a test database
+    - Create a test article with no favorites
+    - Create a test user who hasn't favorited the article
   Act:
     - Call DeleteFavorite with the test article and test user
   Assert:
-    - Verify that the function returns nil error (idempotent behavior)
+    - Verify that the function returns nil (it should not error, just do nothing)
     - Check that the article's FavoritesCount remains unchanged
+    - Ensure the FavoritedUsers list is still empty
 Validation:
-  This test verifies that the function handles gracefully when trying to remove a non-existent favorite, ensuring it doesn't produce errors or unexpected side effects.
+  This test is important to verify that the function gracefully handles attempts to remove non-existent favorites without causing errors or unintended side effects.
 
-Scenario 3: Database Error During Association Removal
+Scenario 3: Database Transaction Rollback on Association Deletion Failure
 
 Details:
-  Description: Test the error handling when a database error occurs during the association removal.
+  Description: This test ensures that if an error occurs during the association deletion, the transaction is rolled back.
 Execution:
   Arrange:
-    - Create a mock database that returns an error on Association("FavoritedUsers").Delete()
-    - Set up an ArticleStore with the mock database
-    - Create a test article and user
+    - Set up ArticleStore with a mocked gorm.DB that returns an error on Association("FavoritedUsers").Delete
+    - Create mock article and user objects
   Act:
-    - Call DeleteFavorite with the test article and test user
+    - Call DeleteFavorite with the mock article and user
   Assert:
     - Verify that the function returns an error
-    - Check that the transaction was rolled back
-    - Ensure the article's FavoritesCount remains unchanged
+    - Check that Rollback was called on the transaction
+    - Ensure that Commit was not called
 Validation:
-  This test ensures proper error handling and transaction management when database operations fail, maintaining data integrity.
+  This test is critical for maintaining data integrity. It verifies that the function properly handles errors and doesn't partially update the database in case of failures.
 
-Scenario 4: Database Error During FavoritesCount Update
+Scenario 4: Database Transaction Rollback on Update Failure
 
 Details:
-  Description: Test the error handling when a database error occurs during the favorites count update.
+  Description: This test verifies that if an error occurs during the favorites count update, the transaction is rolled back.
 Execution:
   Arrange:
-    - Create a mock database that succeeds on Association("FavoritedUsers").Delete() but fails on Update("favorites_count")
-    - Set up an ArticleStore with the mock database
-    - Create a test article and user
+    - Set up ArticleStore with a mocked gorm.DB that succeeds on Association deletion but fails on the Update call
+    - Create mock article and user objects
   Act:
-    - Call DeleteFavorite with the test article and test user
+    - Call DeleteFavorite with the mock article and user
   Assert:
     - Verify that the function returns an error
-    - Check that the transaction was rolled back
-    - Ensure the article's FavoritesCount remains unchanged
+    - Check that Rollback was called on the transaction
+    - Ensure that Commit was not called
 Validation:
-  This test verifies that the function properly handles errors during the second database operation, rolling back the transaction to maintain consistency.
+  This test is important to ensure that the function maintains atomicity of the operation. If the favorites count can't be updated, no changes should persist in the database.
 
-Scenario 5: Concurrent Favorite Deletions
+Scenario 5: Successful Transaction Commit
 
 Details:
-  Description: Test the behavior of the function under concurrent unfavoriting operations.
+  Description: This test ensures that when all database operations succeed, the transaction is committed.
 Execution:
   Arrange:
-    - Create a test database connection with transaction isolation level set to READ COMMITTED
-    - Set up an ArticleStore with the test database
-    - Create a test article with multiple favorited users
-    - Create multiple test users who have favorited the article
+    - Set up ArticleStore with a mocked gorm.DB that successfully performs all operations
+    - Create mock article and user objects
   Act:
-    - Concurrently call DeleteFavorite with the same article and different users
+    - Call DeleteFavorite with the mock article and user
   Assert:
-    - Verify that all function calls complete without errors
-    - Check that the final FavoritesCount matches the expected value after all deletions
-    - Ensure all users are removed from the article's FavoritedUsers association
+    - Verify that the function returns nil (no error)
+    - Check that Commit was called on the transaction
+    - Ensure that Rollback was not called
 Validation:
-  This test ensures that the function behaves correctly under concurrent operations, maintaining data integrity and accurately updating the favorites count.
+  This test verifies that successful operations result in a committed transaction, ensuring that changes are persisted in the database.
 
-Scenario 6: Delete Favorite for Deleted Article
+Scenario 6: In-memory Model Update
 
 Details:
-  Description: Test the behavior when trying to remove a favorite for an article that has been soft-deleted.
+  Description: This test checks that the in-memory article model is correctly updated after a successful database operation.
 Execution:
   Arrange:
-    - Create a test database connection
-    - Set up an ArticleStore with the test database
-    - Create a test article and mark it as soft-deleted
-    - Create a test user who had favorited the article before deletion
+    - Set up ArticleStore with a test database or mock that simulates successful operations
+    - Create a test article with an initial FavoritesCount > 0
   Act:
-    - Call DeleteFavorite with the soft-deleted article and test user
+    - Call DeleteFavorite with the test article and a test user
   Assert:
-    - Verify the function's behavior (either returning an error or handling it gracefully)
-    - Check that the article's FavoritesCount remains unchanged if appropriate
+    - Verify that the function returns nil (no error)
+    - Check that the article's FavoritesCount field has decreased by exactly 1
 Validation:
-  This test verifies how the function handles operations on soft-deleted records, ensuring it behaves appropriately according to the application's requirements for deleted content.
+  This test is important to ensure that the function not only updates the database but also keeps the in-memory model consistent, which is crucial for correct application behavior after the operation.
 ```
 
-These test scenarios cover a range of normal operations, edge cases, and error handling situations for the `DeleteFavorite` function. They aim to validate the function's behavior in various circumstances, ensuring robustness and correctness of the implementation.
+These test scenarios cover various aspects of the `DeleteFavorite` function, including happy path, error handling, transaction management, and in-memory model updates. They aim to ensure the function behaves correctly under different circumstances and maintains data integrity.
 */
 
 // ********RoostGPT********
@@ -132,142 +126,135 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-// MockDB is a mock implementation of *gorm.DB
+// MockDB is a mock implementation of gorm.DB for testing purposes
 type MockDB struct {
-	mock.Mock
+	*gorm.DB
+	Error           error
+	AssociationErr  error
+	UpdateErr       error
+	TransactionErr  error
+	CommitCalled    bool
+	RollbackCalled  bool
+	AssociationCall int
+	UpdateCall      int
 }
 
-func (m *MockDB) Begin() *gorm.DB {
-	args := m.Called()
-	return args.Get(0).(*gorm.DB)
+func (m *MockDB) Begin() *MockDB {
+	return &MockDB{DB: m.DB}
 }
 
-func (m *MockDB) Rollback() *gorm.DB {
-	args := m.Called()
-	return args.Get(0).(*gorm.DB)
+func (m *MockDB) Commit() *MockDB {
+	m.CommitCalled = true
+	return m
 }
 
-func (m *MockDB) Commit() *gorm.DB {
-	args := m.Called()
-	return args.Get(0).(*gorm.DB)
+func (m *MockDB) Rollback() *MockDB {
+	m.RollbackCalled = true
+	return m
 }
 
-func (m *MockDB) Model(value interface{}) *gorm.DB {
-	args := m.Called(value)
-	return args.Get(0).(*gorm.DB)
+func (m *MockDB) Model(value interface{}) *MockDB {
+	return m
 }
 
-func (m *MockDB) Association(column string) *gorm.Association {
-	args := m.Called(column)
-	return args.Get(0).(*gorm.Association)
+func (m *MockDB) Association(column string) *MockDB {
+	m.AssociationCall++
+	return m
 }
 
-func (m *MockDB) Update(column string, value interface{}) *gorm.DB {
-	args := m.Called(column, value)
-	return args.Get(0).(*gorm.DB)
+func (m *MockDB) Delete(value interface{}) *MockDB {
+	if m.AssociationErr != nil {
+		m.Error = m.AssociationErr
+	}
+	return m
 }
 
-// MockAssociation is a mock implementation of *gorm.Association
-type MockAssociation struct {
-	mock.Mock
-}
-
-func (m *MockAssociation) Delete(values ...interface{}) *gorm.Association {
-	args := m.Called(values...)
-	return args.Get(0).(*gorm.Association)
+func (m *MockDB) Update(column string, value interface{}) *MockDB {
+	m.UpdateCall++
+	if m.UpdateErr != nil {
+		m.Error = m.UpdateErr
+	}
+	return m
 }
 
 func TestArticleStoreDeleteFavorite(t *testing.T) {
 	tests := []struct {
-		name          string
-		setupMock     func(*MockDB)
-		article       *model.Article
-		user          *model.User
-		expectedError error
-		expectedCount int32
+		name           string
+		article        *model.Article
+		user           *model.User
+		mockDB         *MockDB
+		expectedErr    error
+		expectedCalls  int
+		expectedCommit bool
 	}{
 		{
 			name: "Successfully Delete a Favorite",
-			setupMock: func(mockDB *MockDB) {
-				mockDB.On("Begin").Return(mockDB)
-				mockAssoc := &MockAssociation{}
-				mockAssoc.On("Delete", mock.Anything).Return(mockAssoc)
-				mockDB.On("Model", mock.AnythingOfType("*model.Article")).Return(mockDB)
-				mockDB.On("Association", "FavoritedUsers").Return(mockAssoc)
-				mockDB.On("Update", "favorites_count", mock.Anything).Return(mockDB)
-				mockDB.On("Commit").Return(mockDB)
+			article: &model.Article{
+				Model:          gorm.Model{ID: 1},
+				FavoritesCount: 1,
+				FavoritedUsers: []model.User{{Model: gorm.Model{ID: 1}}},
 			},
-			article:       &model.Article{FavoritesCount: 1},
-			user:          &model.User{},
-			expectedError: nil,
-			expectedCount: 0,
+			user:           &model.User{Model: gorm.Model{ID: 1}},
+			mockDB:         &MockDB{},
+			expectedErr:    nil,
+			expectedCalls:  2,
+			expectedCommit: true,
 		},
 		{
-			name: "Attempt to Delete a Non-existent Favorite",
-			setupMock: func(mockDB *MockDB) {
-				mockDB.On("Begin").Return(mockDB)
-				mockAssoc := &MockAssociation{}
-				mockAssoc.On("Delete", mock.Anything).Return(mockAssoc)
-				mockDB.On("Model", mock.AnythingOfType("*model.Article")).Return(mockDB)
-				mockDB.On("Association", "FavoritedUsers").Return(mockAssoc)
-				mockDB.On("Update", "favorites_count", mock.Anything).Return(mockDB)
-				mockDB.On("Commit").Return(mockDB)
+			name: "Association Deletion Failure",
+			article: &model.Article{
+				Model:          gorm.Model{ID: 1},
+				FavoritesCount: 1,
 			},
-			article:       &model.Article{FavoritesCount: 0},
-			user:          &model.User{},
-			expectedError: nil,
-			expectedCount: 0,
+			user:           &model.User{Model: gorm.Model{ID: 1}},
+			mockDB:         &MockDB{AssociationErr: errors.New("association deletion error")},
+			expectedErr:    errors.New("association deletion error"),
+			expectedCalls:  1,
+			expectedCommit: false,
 		},
 		{
-			name: "Database Error During Association Removal",
-			setupMock: func(mockDB *MockDB) {
-				mockDB.On("Begin").Return(mockDB)
-				mockAssoc := &MockAssociation{}
-				mockAssoc.On("Delete", mock.Anything).Return(mockAssoc)
-				mockDB.On("Model", mock.AnythingOfType("*model.Article")).Return(mockDB)
-				mockDB.On("Association", "FavoritedUsers").Return(mockAssoc)
-				mockDB.On("Rollback").Return(mockDB)
-				mockDB.Error = errors.New("DB error")
+			name: "Update Failure",
+			article: &model.Article{
+				Model:          gorm.Model{ID: 1},
+				FavoritesCount: 1,
 			},
-			article:       &model.Article{FavoritesCount: 1},
-			user:          &model.User{},
-			expectedError: errors.New("DB error"),
-			expectedCount: 1,
-		},
-		{
-			name: "Database Error During FavoritesCount Update",
-			setupMock: func(mockDB *MockDB) {
-				mockDB.On("Begin").Return(mockDB)
-				mockAssoc := &MockAssociation{}
-				mockAssoc.On("Delete", mock.Anything).Return(mockAssoc)
-				mockDB.On("Model", mock.AnythingOfType("*model.Article")).Return(mockDB)
-				mockDB.On("Association", "FavoritedUsers").Return(mockAssoc)
-				mockDB.On("Update", "favorites_count", mock.Anything).Return(mockDB)
-				mockDB.On("Rollback").Return(mockDB)
-				mockDB.Error = errors.New("DB error")
-			},
-			article:       &model.Article{FavoritesCount: 1},
-			user:          &model.User{},
-			expectedError: errors.New("DB error"),
-			expectedCount: 1,
+			user:           &model.User{Model: gorm.Model{ID: 1}},
+			mockDB:         &MockDB{UpdateErr: errors.New("update error")},
+			expectedErr:    errors.New("update error"),
+			expectedCalls:  2,
+			expectedCommit: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDB := new(MockDB)
-			tt.setupMock(mockDB)
+			s := &ArticleStore{
+				db: tt.mockDB,
+			}
 
-			store := &ArticleStore{db: mockDB}
-			err := store.DeleteFavorite(tt.article, tt.user)
+			err := s.DeleteFavorite(tt.article, tt.user)
 
-			assert.Equal(t, tt.expectedError, err)
-			assert.Equal(t, tt.expectedCount, tt.article.FavoritesCount)
-			mockDB.AssertExpectations(t)
+			if (err != nil) != (tt.expectedErr != nil) {
+				t.Errorf("DeleteFavorite() error = %v, expectedErr %v", err, tt.expectedErr)
+			}
+
+			if tt.mockDB.AssociationCall+tt.mockDB.UpdateCall != tt.expectedCalls {
+				t.Errorf("Expected %d calls, got %d", tt.expectedCalls, tt.mockDB.AssociationCall+tt.mockDB.UpdateCall)
+			}
+
+			if tt.mockDB.CommitCalled != tt.expectedCommit {
+				t.Errorf("Expected Commit to be called: %v, got: %v", tt.expectedCommit, tt.mockDB.CommitCalled)
+			}
+
+			if tt.expectedErr != nil && !tt.mockDB.RollbackCalled {
+				t.Error("Expected Rollback to be called on error")
+			}
+
+			if tt.expectedErr == nil && tt.article.FavoritesCount != 0 {
+				t.Errorf("Expected FavoritesCount to be 0, got %d", tt.article.FavoritesCount)
+			}
 		})
 	}
 }

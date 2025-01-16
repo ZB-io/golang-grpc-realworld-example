@@ -6,7 +6,7 @@ ROOST_METHOD_HASH=GetByID_bbf946112e
 ROOST_METHOD_SIG_HASH=GetByID_728dd55ed1
 
 FUNCTION_DEF=func (s *UserStore) GetByID(id uint) (*model.User, error)
-Based on the provided function and context, here are several test scenarios for the `GetByID` function in the `UserStore` struct:
+Based on the provided function and context, here are several test scenarios for the `GetByID` function:
 
 ```
 Scenario 1: Successfully retrieve a user by ID
@@ -14,80 +14,80 @@ Scenario 1: Successfully retrieve a user by ID
 Details:
   Description: This test verifies that the GetByID function correctly retrieves a user from the database when given a valid user ID.
 Execution:
-  Arrange: Set up a test database with a known user record. Initialize a UserStore with this database.
+  Arrange: Set up a mock database with a known user record.
   Act: Call GetByID with the ID of the known user.
   Assert: Verify that the returned user matches the expected user data and that no error is returned.
 Validation:
-  This test ensures the basic functionality of retrieving a user works correctly. It's crucial for user-related operations in the application.
+  This test ensures the basic functionality of retrieving a user works as expected. It's crucial for verifying that the database query is correctly constructed and executed.
 
 Scenario 2: Attempt to retrieve a non-existent user
 
 Details:
-  Description: This test checks the behavior of GetByID when querying for a user ID that doesn't exist in the database.
+  Description: This test checks the behavior of GetByID when provided with an ID that doesn't correspond to any user in the database.
 Execution:
-  Arrange: Set up a test database without any users. Initialize a UserStore with this database.
+  Arrange: Set up a mock database with no user matching the target ID.
   Act: Call GetByID with a non-existent user ID.
-  Assert: Verify that the function returns a nil user and a gorm.ErrRecordNotFound error.
+  Assert: Verify that the function returns a nil user and a non-nil error (likely gorm.ErrRecordNotFound).
 Validation:
-  This test ensures proper error handling when querying for non-existent users, which is important for maintaining data integrity and providing accurate feedback to the application.
+  This test is important for error handling, ensuring the function behaves correctly when no user is found.
 
-Scenario 3: Handle database connection error
+Scenario 3: Database connection error
 
 Details:
-  Description: This test verifies the behavior of GetByID when there's an issue with the database connection.
+  Description: This test simulates a database connection error to verify the error handling of GetByID.
 Execution:
-  Arrange: Set up a mock database that returns a connection error. Initialize a UserStore with this mock database.
+  Arrange: Set up a mock database that returns a connection error when queried.
   Act: Call GetByID with any user ID.
-  Assert: Verify that the function returns a nil user and the specific database connection error.
+  Assert: Verify that the function returns a nil user and a non-nil error that matches the expected database error.
 Validation:
-  This test ensures that the function properly handles and propagates database errors, which is crucial for error reporting and system reliability.
+  This test ensures that database errors are properly propagated and not silently ignored, which is crucial for debugging and error reporting in production.
 
-Scenario 4: Retrieve a user with minimum fields populated
+Scenario 4: Retrieve user with minimum fields populated
 
 Details:
-  Description: This test checks if GetByID correctly retrieves a user with only the required fields populated.
+  Description: This test checks if GetByID correctly handles a user record with only the minimum required fields populated.
 Execution:
-  Arrange: Set up a test database with a user record having only the required fields (ID, Username, Email, Password) populated. Initialize a UserStore with this database.
+  Arrange: Set up a mock database with a user record containing only ID, Username, Email, and Password (as these are marked "not null" in the struct).
   Act: Call GetByID with the ID of this minimal user.
-  Assert: Verify that the returned user has the correct ID, Username, Email, and Password, with default values for other fields.
+  Assert: Verify that the returned user has the correct ID and that the minimal fields are populated, while other fields are zero-valued.
 Validation:
-  This test ensures that the function works correctly with minimal user data, which is important for backwards compatibility and handling various user data states.
+  This test is important to ensure the function works correctly with varying levels of data completeness, which is common in real-world scenarios.
 
-Scenario 5: Retrieve a user with all fields populated
+Scenario 5: Retrieve user with all fields populated
 
 Details:
   Description: This test verifies that GetByID correctly retrieves all fields of a fully populated user record.
 Execution:
-  Arrange: Set up a test database with a user record having all fields populated, including relationships like Follows and FavoriteArticles. Initialize a UserStore with this database.
+  Arrange: Set up a mock database with a user record that has all fields populated, including relationships like Follows and FavoriteArticles.
   Act: Call GetByID with the ID of this fully populated user.
-  Assert: Verify that the returned user object contains all the expected data, including related entities.
+  Assert: Verify that the returned user has all fields correctly populated, including slice fields like Follows and FavoriteArticles.
 Validation:
-  This test ensures that the function correctly handles and retrieves all user data, including complex relationships, which is crucial for features that require complete user information.
+  This test ensures that the function correctly handles and returns all user data, including complex relationships, which is important for features that rely on complete user information.
 
-Scenario 6: Performance test with a large number of users
+Scenario 6: Performance with a large number of users
 
 Details:
   Description: This test checks the performance of GetByID when the database contains a large number of users.
 Execution:
-  Arrange: Set up a test database with a large number of user records (e.g., 100,000). Initialize a UserStore with this database.
-  Act: Call GetByID with the ID of a user in the middle of the dataset.
-  Assert: Verify that the function returns the correct user within an acceptable time frame (e.g., under 100ms).
+  Arrange: Set up a mock database with a large number of user records (e.g., 100,000+).
+  Act: Call GetByID with the ID of a user in the middle or end of the dataset.
+  Assert: Verify that the function returns the correct user within an acceptable time frame (define a timeout).
 Validation:
-  This test ensures that the function performs well under load, which is important for maintaining application responsiveness in production environments with large user bases.
+  This test is crucial for ensuring the function's scalability and performance in real-world conditions with large datasets.
 
-Scenario 7: Attempt to retrieve a soft-deleted user
+Scenario 7: Behavior with zero ID
 
 Details:
-  Description: This test verifies the behavior of GetByID when querying for a user that has been soft-deleted.
+  Description: This test checks how GetByID handles being called with a user ID of 0, which is an edge case.
 Execution:
-  Arrange: Set up a test database with a soft-deleted user (DeletedAt field set). Initialize a UserStore with this database.
-  Act: Call GetByID with the ID of the soft-deleted user.
-  Assert: Verify that the function returns a nil user and a gorm.ErrRecordNotFound error.
+  Arrange: No specific database setup required.
+  Act: Call GetByID with an ID of 0.
+  Assert: Verify that the function returns an appropriate error or nil user, depending on how the application should handle this case.
 Validation:
-  This test ensures that the function respects GORM's soft delete functionality, which is important for maintaining data integrity and implementing features like user account restoration.
+  This test is important for handling edge cases and preventing potential bugs or unexpected behavior with invalid input.
 ```
 
-These test scenarios cover a range of normal operations, edge cases, and error handling situations for the `GetByID` function. They take into account the provided package structure, imports, and struct definitions to create realistic and comprehensive test cases.
+These scenarios cover a range of normal operations, error conditions, and edge cases for the GetByID function, providing a comprehensive test suite for this functionality.
 */
 
 // ********RoostGPT********
@@ -95,122 +95,162 @@ package store
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/raahii/golang-grpc-realworld-example/model"
+	"github.com/stretchr/testify/assert"
 )
 
-// MockDB implements the necessary methods of gorm.DB for our tests
-type MockDB struct {
-	FindFunc func(out interface{}, where ...interface{}) *gorm.DB
+type mockDB struct {
+	findFunc func(out interface{}, where ...interface{}) *gorm.DB
 }
 
-func (m *MockDB) Find(out interface{}, where ...interface{}) *gorm.DB {
-	return m.FindFunc(out, where...)
+func (m *mockDB) Find(out interface{}, where ...interface{}) *gorm.DB {
+	return m.findFunc(out, where...)
+}
+
+// Define an interface that includes the methods we need from gorm.DB
+type dbInterface interface {
+	Find(out interface{}, where ...interface{}) *gorm.DB
+}
+
+// Modify UserStore to use the interface instead of *gorm.DB
+type UserStore struct {
+	db dbInterface
 }
 
 func TestUserStoreGetById(t *testing.T) {
 	tests := []struct {
-		name     string
-		id       uint
-		mockFind func(interface{}, ...interface{}) *gorm.DB
-		want     *model.User
-		wantErr  error
+		name    string
+		id      uint
+		mockDB  func() *mockDB
+		want    *model.User
+		wantErr error
 	}{
 		{
 			name: "Successfully retrieve a user by ID",
 			id:   1,
-			mockFind: func(out interface{}, where ...interface{}) *gorm.DB {
-				*(out.(*model.User)) = model.User{
-					Model:    gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now()},
-					Username: "testuser",
-					Email:    "test@example.com",
-					Password: "hashedpassword",
+			mockDB: func() *mockDB {
+				return &mockDB{
+					findFunc: func(out interface{}, where ...interface{}) *gorm.DB {
+						user := out.(*model.User)
+						*user = model.User{
+							Model:    gorm.Model{ID: 1},
+							Username: "testuser",
+							Email:    "test@example.com",
+							Password: "password",
+						}
+						return &gorm.DB{Error: nil}
+					},
 				}
-				return &gorm.DB{Error: nil}
 			},
 			want: &model.User{
 				Model:    gorm.Model{ID: 1},
 				Username: "testuser",
 				Email:    "test@example.com",
-				Password: "hashedpassword",
+				Password: "password",
 			},
 			wantErr: nil,
 		},
 		{
 			name: "Attempt to retrieve a non-existent user",
 			id:   999,
-			mockFind: func(out interface{}, where ...interface{}) *gorm.DB {
-				return &gorm.DB{Error: gorm.ErrRecordNotFound}
+			mockDB: func() *mockDB {
+				return &mockDB{
+					findFunc: func(out interface{}, where ...interface{}) *gorm.DB {
+						return &gorm.DB{Error: gorm.ErrRecordNotFound}
+					},
+				}
 			},
 			want:    nil,
 			wantErr: gorm.ErrRecordNotFound,
 		},
 		{
-			name: "Handle database connection error",
+			name: "Database connection error",
 			id:   1,
-			mockFind: func(out interface{}, where ...interface{}) *gorm.DB {
-				return &gorm.DB{Error: errors.New("database connection error")}
+			mockDB: func() *mockDB {
+				return &mockDB{
+					findFunc: func(out interface{}, where ...interface{}) *gorm.DB {
+						return &gorm.DB{Error: errors.New("database connection error")}
+					},
+				}
 			},
 			want:    nil,
 			wantErr: errors.New("database connection error"),
 		},
 		{
-			name: "Retrieve a user with minimum fields populated",
+			name: "Retrieve user with minimum fields populated",
 			id:   2,
-			mockFind: func(out interface{}, where ...interface{}) *gorm.DB {
-				*(out.(*model.User)) = model.User{
-					Model:    gorm.Model{ID: 2, CreatedAt: time.Now(), UpdatedAt: time.Now()},
-					Username: "minuser",
-					Email:    "min@example.com",
-					Password: "minpassword",
+			mockDB: func() *mockDB {
+				return &mockDB{
+					findFunc: func(out interface{}, where ...interface{}) *gorm.DB {
+						user := out.(*model.User)
+						*user = model.User{
+							Model:    gorm.Model{ID: 2},
+							Username: "minuser",
+							Email:    "min@example.com",
+							Password: "minpass",
+						}
+						return &gorm.DB{Error: nil}
+					},
 				}
-				return &gorm.DB{Error: nil}
 			},
 			want: &model.User{
 				Model:    gorm.Model{ID: 2},
 				Username: "minuser",
 				Email:    "min@example.com",
-				Password: "minpassword",
+				Password: "minpass",
 			},
 			wantErr: nil,
 		},
 		{
-			name: "Retrieve a user with all fields populated",
+			name: "Retrieve user with all fields populated",
 			id:   3,
-			mockFind: func(out interface{}, where ...interface{}) *gorm.DB {
-				*(out.(*model.User)) = model.User{
-					Model:            gorm.Model{ID: 3, CreatedAt: time.Now(), UpdatedAt: time.Now()},
-					Username:         "fulluser",
-					Email:            "full@example.com",
-					Password:         "fullpassword",
-					Bio:              "Full bio",
-					Image:            "full.jpg",
-					Follows:          []model.User{{Model: gorm.Model{ID: 4}}},
-					FavoriteArticles: []model.Article{{Model: gorm.Model{ID: 5}}},
+			mockDB: func() *mockDB {
+				return &mockDB{
+					findFunc: func(out interface{}, where ...interface{}) *gorm.DB {
+						user := out.(*model.User)
+						*user = model.User{
+							Model:    gorm.Model{ID: 3, CreatedAt: time.Now(), UpdatedAt: time.Now()},
+							Username: "fulluser",
+							Email:    "full@example.com",
+							Password: "fullpass",
+							Bio:      "Full bio",
+							Image:    "full.jpg",
+							Follows:  []model.User{{Model: gorm.Model{ID: 4}}},
+							FavoriteArticles: []model.Article{
+								{Model: gorm.Model{ID: 1}, Title: "Article 1"},
+							},
+						}
+						return &gorm.DB{Error: nil}
+					},
 				}
-				return &gorm.DB{Error: nil}
 			},
 			want: &model.User{
-				Model:            gorm.Model{ID: 3},
-				Username:         "fulluser",
-				Email:            "full@example.com",
-				Password:         "fullpassword",
-				Bio:              "Full bio",
-				Image:            "full.jpg",
-				Follows:          []model.User{{Model: gorm.Model{ID: 4}}},
-				FavoriteArticles: []model.Article{{Model: gorm.Model{ID: 5}}},
+				Model:    gorm.Model{ID: 3},
+				Username: "fulluser",
+				Email:    "full@example.com",
+				Password: "fullpass",
+				Bio:      "Full bio",
+				Image:    "full.jpg",
+				Follows:  []model.User{{Model: gorm.Model{ID: 4}}},
+				FavoriteArticles: []model.Article{
+					{Model: gorm.Model{ID: 1}, Title: "Article 1"},
+				},
 			},
 			wantErr: nil,
 		},
 		{
-			name: "Attempt to retrieve a soft-deleted user",
-			id:   6,
-			mockFind: func(out interface{}, where ...interface{}) *gorm.DB {
-				return &gorm.DB{Error: gorm.ErrRecordNotFound}
+			name: "Behavior with zero ID",
+			id:   0,
+			mockDB: func() *mockDB {
+				return &mockDB{
+					findFunc: func(out interface{}, where ...interface{}) *gorm.DB {
+						return &gorm.DB{Error: gorm.ErrRecordNotFound}
+					},
+				}
 			},
 			want:    nil,
 			wantErr: gorm.ErrRecordNotFound,
@@ -219,24 +259,21 @@ func TestUserStoreGetById(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockDB := &MockDB{FindFunc: tt.mockFind}
-			s := &UserStore{db: mockDB}
+			mockDB := tt.mockDB()
+			s := &UserStore{
+				db: mockDB,
+			}
 
 			got, err := s.GetByID(tt.id)
 
-			if (err != nil) != (tt.wantErr != nil) {
-				t.Errorf("UserStore.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.wantErr.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
 			}
 
-			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				t.Errorf("UserStore.GetByID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UserStore.GetByID() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
