@@ -36,7 +36,7 @@ This codebase was created to demonstrate a fully fledged fullstack application b
 
 ## Getting started
 
-The app listens and serves on `0.0.0.0:3000`. 
+The app listens and serves on `0.0.0.0:3000`.. 
 
 
 - docker-compose
